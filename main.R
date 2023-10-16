@@ -54,8 +54,8 @@ if (mod_type == "mod2") {
 
 ## ## ## Mod 4 and 5 ## ## ##
 if (mod_type == "mod4" | mod_type == "mod5") {
-  par$tf <- 15 # dynamic equation time (30)
-  par$dt <- 0.3 # time step (0.08)
+  par$tf <- 10 # dynamic equation time (30)
+  par$dt <- 0.6 # time step (0.08)
   par$adaptBias <- 0 
   par$gamma <- 0.3 # feedback gain factor (0.05)
   par$eta <- 0.3 # learning rate (0.1)
@@ -66,7 +66,7 @@ if (mod_type == "mod4" | mod_type == "mod5") {
 # weights per subj and layers (figures and csv; 1 = yes, 0 = no)
 print_weights <- 1
 # how many simulated subjects?
-nSim <- 3
+nSim <- 2
 
 # for loop for subjects
 message(paste("Starting ",nSim," simulations..."))

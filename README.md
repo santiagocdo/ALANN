@@ -43,5 +43,5 @@ On the nature of CS and US representations in Pavlovian learning.
 Learning & Behavior, 40, 1-23.
 
 Castiello, S., Zhang, W., & Delamater, A. R. (2021). 
-The retrosplenial cortex as a possible “sensory integration” area: A neural network modeling approach of the differential outcomes effect in negative patterning. 
+The retrosplenial cortex as a possible 'sensory integration' area: A neural network modeling approach of the differential outcomes effect in negative patterning. 
 Neurobiology of learning and memory, 185, 107527.
