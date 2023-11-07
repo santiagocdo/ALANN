@@ -28,7 +28,7 @@ trPh <- dataReady$trPh
   #mod4: Contrast Hebbian Learning (CHL); Xie & Seung (2003) - Neural Computation
   #mod5: CHL with random feedback; Detorakis, et al. (2019) - Neural Networks
 
-mod_type <- "mod5" # If model 2 then must have a gamma value
+mod_type <- "mod3" # If model 2 then must have a gamma value
 
 # run sanity check function (warnings provided)
 f_sanityCheck()
@@ -36,13 +36,12 @@ f_sanityCheck()
 
 
 # # # # Parameters # # # #
-## ## ## Mod 1 and 3 ## ## ##
-if (mod_type == "mod1" | mod_type == "mod3") {
+## ## ## Mod 1 ## ## ##
+if (mod_type == "mod1") {
   # alpha (learning rate) and beta (momentum; Delamater, 2012)
   par$alpha <- 0.3
   par$beta <- 0.9
 }
-
 
 ## ## ## Mod 2 ## ## ##
 if (mod_type == "mod2") {
@@ -51,6 +50,13 @@ if (mod_type == "mod2") {
   par$mu <- 0.01 # mu (m) is for weights between hidden to output
 }
 
+## ## ## Mod 3 ## ## ##
+if (mod_type == "mod3") {
+  # alpha (learning rate) and beta (momentum; Delamater, 2012)
+  par$alpha <- 0.3
+  par$beta <- 0.9
+  par$adaptBias <- 0
+}
 
 ## ## ## Mod 4 and 5 ## ## ##
 if (mod_type == "mod4" | mod_type == "mod5") {

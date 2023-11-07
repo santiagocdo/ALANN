@@ -100,6 +100,7 @@ f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
       } else if (mod_type == "mod4") {
         phs[[ph]] <- f_mod4(tempPar,training=trPh[[ph]])
         exp <- data.frame(ph=ph,phs[[ph]]$db)
+        chl_error <- data.frame(ph=ph,phs[[ph]]$chl_error)
       }  else if (mod_type == "mod5") {
         phs[[ph]] <- f_mod5(tempPar,training=trPh[[ph]])
         exp <- data.frame(ph=ph,phs[[ph]]$db)
@@ -112,7 +113,7 @@ f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
         test <- data.frame(ph=ph,phs[[ph]]$actOT)
       } else {test <- NULL}
       
-     
+      
       
       # # # # Phase > 1 # # # #
     } else {
@@ -149,6 +150,7 @@ f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
         # add correct number of blocks
         phs[[ph]]$db$nBlock <- phs[[ph]]$db$nBlock + max(exp$nBlock)
         exp <- rbind(exp,data.frame(ph=ph,phs[[ph]]$db))
+        chl_error <- rbind(chl_error,data.frame(ph=ph,phs[[ph]]$chl_error))
       } else if (mod_type == "mod5") {
         phs[[ph]] <- f_mod5(par=tempPar,training=trPh[[ph]],
                             preW=list(W=phs[[ph-1]]$W,
@@ -168,7 +170,7 @@ f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
       
     } # end if phase 1
     
-   
+    
     
     # store weights
     if (mod_type == "mod1" | mod_type == "mod2") {
@@ -196,7 +198,7 @@ f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
       colnames(test)[-(1:2)] <- c("out","actOT")
     }
   }
-
+  
   # if no model 5 was conducted then no chl errors, thus NULL
   if (!exists("chl_error")) {chl_error <- NULL}
   
@@ -257,7 +259,7 @@ f_plotSims <- function(exp, test, chl_error, par, nSim, doIndPart = 0, mod_type 
     chl <- reshape2::melt(chl_error, measure.vars = colnames(chl_error)[grepl("out",colnames(chl_error))])
     colnames(chl)[grepl("va",colnames(chl))] <- c("out","error")
     pChl.error <- ggplot(chl[chl$nSubj == 1,],aes(x=nBlock,y=error,col=as.factor(nHid))) +
-      labs(title="CHL error",subtitle = "Network 1",x="Phase",y="Mean Output Activation") +
+      labs(title="CHL error",subtitle = "Network 1",x="Phase",y="Error") +
       geom_line() + facet_grid(trialType ~ .) + 
       theme_bw()
     if (nOut > 1) {pChl.error <- pChl.error + facet_grid(trialType ~ out)}
@@ -892,8 +894,9 @@ f_mod4 <- function (par, training, preW = NULL) {
       
       ## ## Contrastive Hebbian Learning ## ##
       # 1. dynamic equations # # # # # # # # # # # # # # # # # # # #
-      # Clamped Phase  # # # # # # # # # # # # # # # # # # # #
-      # xUp2 <- xUp
+      # # # # Clamped Phase  # # # # # # # # # # # # # # # # # # # #
+      # create xUp2 for visualization purposes
+      xUp2 <- xUp
       for (ts in 1:tf) {
         for (k in (L-1):1) {
           if (k == 1) { # k-1 should be xUp 0
@@ -902,13 +905,15 @@ f_mod4 <- function (par, training, preW = NULL) {
             temp <- f_sigAct( t(W[[k]])%*%xUp[[k-1]] + gamma*W[[k+1]]%*%xUp[[k+1]] + bias[[k]] )
           }
           xUp[[k]] <- xUp[[k]] + dt * (-xUp[[k]] + temp)
-          # xUp2[[k]] <- cbind(xUp2[[k]],xUp[[k]])
+          # accumulate activation for visualization purposes
+          xUp2[[k]] <- cbind(xUp2[[k]],xUp[[k]])
         }
       }
       # ggplot(melt(t(xUp2[[1]])),aes(x=Var1,y=value,col=as.factor(Var2))) + geom_line()
       
-      # Free Phase # # # # # # # # # # # # # # # # # # # #
-      # xDo2 <- xDo
+      # # # # Free Phase # # # # # # # # # # # # # # # # # # # #
+      # create xD02 for visualization purposes
+      xDo2 <- xDo
       for (ts in 1:tf) {
         for (k in 1:L) {
           if (k == 1) { # k-1 should be xDown 0
@@ -919,7 +924,8 @@ f_mod4 <- function (par, training, preW = NULL) {
             temp <- f_sigAct( t(W[[k]])%*%xDo[[k-1]] + gamma*W[[k+1]]%*%xDo[[k+1]] + bias[[k]])
           }
           xDo[[k]] <- xDo[[k]] + dt * (-xDo[[k]] + temp)
-          # xDo2[[k]] <- cbind(xDo2[[k]],xDo[[k]])
+          # accumulate activation for visualization purposes
+          xDo2[[k]] <- cbind(xDo2[[k]],xDo[[k]])
         }
       }
       # ggplot(melt(t(xDo2[[1]])),aes(x=Var1,y=value,col=as.factor(Var2))) + geom_line()
@@ -930,7 +936,8 @@ f_mod4 <- function (par, training, preW = NULL) {
         if (k == 1) {
           dW <- eta*gamma^(k-L) * t(xUp[[k]]%*%t(xUp0) - xDo[[k]]%*%t(xDo0))
         } else {
-          dW <- eta*gamma^(k-L) * t(xUp[[k]]%*%t(xUp[[k-1]]) - xDo[[k]]%*%t(xDo[[k-1]]))
+          error <- t(xUp[[k]]%*%t(xUp[[k-1]]) - xDo[[k]]%*%t(xDo[[k-1]]))
+          dW <- eta*gamma^(k-L) * error
         }
         W[[k]] <- W[[k]] + dW * C[[k]]
       }
@@ -940,12 +947,15 @@ f_mod4 <- function (par, training, preW = NULL) {
         inpEp <- t(xDo0)
         outEp <- t(xUp[[L]])
         actOEp <- t(xDo[[L]])
-        # actOEp <- t(rowSums(xDo2[[k]])/ncol(xDo2[[k]]))
+        # record error activation
+        chl <- data.frame(trial=j,trialType=trialType[j],
+                          nHid=1:nHid,error)
       } else {
         inpEp <- rbind(inpEp,t(xDo0))
         outEp <- rbind(outEp,t(xUp[[L]]))
         actOEp <- rbind(actOEp,t(xDo[[L]]))
-        # actOEp <- rbind(actOEp,t(rowSums(xDo2[[k]])/ncol(xDo2[[k]])))
+        chl <- rbind(chl,data.frame(trial=j,trialType=trialType[j],
+                                    nHid=1:nHid,error))
       }
     } # end j (nTrialType)
     
@@ -955,11 +965,13 @@ f_mod4 <- function (par, training, preW = NULL) {
       out <- outEp
       actO <- actOEp
       trialTypeLong <- as.character(trialType)
+      chl_error <- data.frame(nBlock=nB,chl)
     } else {
       inp <- rbind(inp,inpEp)
       out <- rbind(out,outEp)
       actO <- rbind(actO,actOEp)
       trialTypeLong <- c(trialTypeLong,as.character(trialType))
+      chl_error <- rbind(chl_error,data.frame(nBlock=nB,chl))
     }
   } # end nB blocks (epochs)
   
@@ -973,12 +985,16 @@ f_mod4 <- function (par, training, preW = NULL) {
       }
     } # end k layer
   }
+  # data.frame(actOT,trialTypeTest) # see if learning took place
+  
   # outputs' activations data frame
   db <- data.frame(nTrial=1:nTrial,nBlock=rep(1:nBlock,each=nTrialType),
                    trialType=trialTypeLong,actO=actO)
   # create output list object
   colnames(actOT) <- paste0(rep("actOT.",nOut),1:nOut)
-  output <- list(db=db, actO=actO, W=W, C=C,
+  # rename output-hidden errors columns
+  colnames(chl_error)[-(1:4)] <- paste0(rep("out.",nOut),1:nOut)
+  output <- list(db=db, actO=actO, W=W, C=C, chl_error=chl_error,
                  actOT=data.frame(trialType=trialTypeTest,actOT))
   return(output)
 }
