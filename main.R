@@ -50,7 +50,7 @@ trPh <- dataReady$trPh
   #mod4: Contrast Hebbian Learning (CHL); Xie & Seung (2003) - Neural Computation
   #mod5: CHL with random feedback; Detorakis, et al. (2019) - Neural Networks
 
-mod_type <- "mod1"
+mod_type <- "mod2"
 
 # run sanity check function (warnings provided)
 f_sanityCheck()
@@ -99,7 +99,7 @@ if (mod_type == "mod4" | mod_type == "mod5") {
 # weights per subj and layers (figures and csv; 1 = yes, 0 = no)
 print_weights <- 0
 # how many simulated subjects?
-nSim <- 16
+nSim <- 3
 
 # for loop for subjects
 message(paste("Starting ",nSim," simulations..."))
@@ -133,51 +133,51 @@ if (!exists("chl_error")) {chl_error <- NULL}
 plots <- f_plotSims(exp, test, chl_error, par, nSim,
                     doIndPart = 0, mod_type, label_output)
 
-# # display plots from the list() called "plot"
-# # plot means (pMean) average output activation
-# plots$pMean
-# # plot individuals (pInd) output activation
-# plots$pInd
-# # plot tests (pTest) average output activation in test trials
-# plots$pTest
-# # plot learning rates from input to hidden (pLR.IH)
-# plots$pLR.IH
-# # plot learning rates from hidden to output (pLR.HO)
-# plots$pLR.HO
-# # plot ch errors (pChl.error)
-# plots$pChl.error
-# 
-# # save a csv from "exp" data frame, containing output activations in long format
-# write.csv(exp,paste0("output/exp_",mod_type,"_n",nSim,".csv"),row.names = F)
+# display plots from the list() called "plot"
+# plot means (pMean) average output activation
+plots$pMean
+# plot individuals (pInd) output activation
+plots$pInd
+# plot tests (pTest) average output activation in test trials
+plots$pTest
+# plot learning rates from input to hidden (pLR.IH)
+plots$pLR.IH
+# plot learning rates from hidden to output (pLR.HO)
+plots$pLR.HO
+# plot ch errors (pChl.error)
+plots$pChl.error
 
-# save plots
-ggsave(paste0("figures/pMean_",mod_type,"_",label_output,"_out",
-              length(unique(exp$out)),".png"), dpi = 300, limitsize = TRUE,
-       plot = plots$pMean, 
-       units = "px", # "cm", "in"
-       width = 1200,
-       height = 800)
-# save plots
-ggsave(paste0("figures/pInd_",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
-       plot = plots$pInd, 
-       units = "px",
-       width = 1200, 
-       height = 800)
-# save plots
-ggsave(paste0("figures/pLR.IH_",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
-       plot = plots$pLR.IH, 
-       units = "px",
-       width = 1200, 
-       height = 800)
-# save plots
-ggsave(paste0("figures/pLR.HO",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
-       plot = plots$pLR.HO, 
-       units = "px",
-       width = 1200, 
-       height = 800)
-# save plots
-ggsave(paste0("figures/pChl.error_",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
-       plot = plots$pChl.error, 
-       units = "px",
-       width = 1200, 
-       height = 800)
+# save a csv from "exp" data frame, containing output activations in long format
+write.csv(exp,paste0("output/exp_",mod_type,"_n",nSim,".csv"),row.names = F)
+
+# # save plots
+# ggsave(paste0("figures/pMean_",mod_type,"_",label_output,"_out",
+#               length(unique(exp$out)),".png"), dpi = 300, limitsize = TRUE,
+#        plot = plots$pMean, 
+#        units = "px", # "cm", "in"
+#        width = 1200,
+#        height = 800)
+# # save plots
+# ggsave(paste0("figures/pInd_",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
+#        plot = plots$pInd, 
+#        units = "px",
+#        width = 1200, 
+#        height = 800)
+# # save plots
+# ggsave(paste0("figures/pLR.IH_",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
+#        plot = plots$pLR.IH, 
+#        units = "px",
+#        width = 1200, 
+#        height = 800)
+# # save plots
+# ggsave(paste0("figures/pLR.HO",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
+#        plot = plots$pLR.HO, 
+#        units = "px",
+#        width = 1200, 
+#        height = 800)
+# # save plots
+# ggsave(paste0("figures/pChl.error_",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
+#        plot = plots$pChl.error, 
+#        units = "px",
+#        width = 1200, 
+#        height = 800)
