@@ -50,7 +50,7 @@ trPh <- dataReady$trPh
   #mod4: Contrast Hebbian Learning (CHL); Xie & Seung (2003) - Neural Computation
   #mod5: CHL with random feedback; Detorakis, et al. (2019) - Neural Networks
 
-mod_type <- "mod4"
+mod_type <- "mod1"
 
 # run sanity check function (warnings provided)
 f_sanityCheck()
