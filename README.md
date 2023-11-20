@@ -1,16 +1,38 @@
 # Associative Learning with Artificial Neural Network (ALANN)
-16/10/2023
+19/11/2023
 
 # Summary
-This is an ongoing project led by Prof. Andrew Delamater in collaboration with Dr. Santiago Castiello de Obeso. The aim of this project is to implement computational models to understand the principles of learning and behaviour.
+This is an ongoing project led by Prof. Andrew Delamater in collaboration with Dr. Santiago Castiello de Obeso. The aim of this project is to understand the "microstructure of cognition" 
+implement computational models to understand the principles of learning and behaviour.
 
 # Instructions
 This project is programmed in R. Thus, the user will need to install the latest versions of R programming language and R Studio. 
 1. Open ALANN.Rproj R project
 2. Open main.R within the project
-3. Prepare the training.csv file (multiple phases, parameters, hidden units, and different inputs and outputs)
-4. Run script adjusting lines 29 to 35
-5. See Figures in lines 65 to  74
+3. Prepare the training.csv file. The columns are:
+  phase = discrete numbers
+  matType = 3 types: INPUT, OUTPUT, and TEST (optional)
+  trialType = trial type names as strings 	
+  in.$ = many columns as you want inputs, starting with in. then input name.  
+  out.$ = many columns as you want outputs, starting with out then output name.  
+  par.$ = parameters (par)
+    par.nH.$ = number of hidden units (nH)
+      par.nH.nHV = number of hidden visual (nHV)
+      par.nH.nHMM = number of multiSmodal units (nHMM)
+      par.nH.nHA = number of hidden auditory (nHA)	
+    par.nI.$ = number of input units (nI)
+      par.nI.ctx = number of context units (fully connected)
+      par.nI.vis = number of visual units (connected with multimodal and visual hidden units)
+      par.nI.aud = number of auditory units (connected with multimodal and auditory hidden units)
+4. Adjust the main.R script:
+  4.1. Decide which model you want to run in line 53. 
+    mod1: Back-Propagation (BP); Delamater (2012) - Learning & Behaviour
+    mod2: BP dynamic alpha; Delamater & Castiello (2022) - gregynog Associative Learning Symposoum
+    mod3: BP; Xie & Seung (2003) - Neural Computation
+    mod4: Contrast Hebbian Learning (CHL); Xie & Seung (2003) - Neural Computation
+    mod5: CHL with random feedback; Detorakis, et al. (2019) - Neural Networks
+  4.2. Adjust parameters depending on the model (modType) in lines 64 to 90.
+5. Visualize Figures from lines 138 to 148
 
 # Content
 This project is programmed in R. Thus, the user will need to install the latest versions of R programming language and R Studio. In this folder you will:

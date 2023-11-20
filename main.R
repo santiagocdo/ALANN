@@ -1,3 +1,25 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # ALAAN: main.R # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
+# # # # # Associative # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # Learning# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # Artificial# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # Neural# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # Network # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# usage of function structure in main.R:
+#   1. f_loadLibraries()
+#   2. f_prepData()
+#   3. f_sanityCheck()
+#   4. f_runSim()
+#     4.1. f_mod1(), f_mod2(), f_mod3(), f_mod4(), and f_mod5()
+#       4.1.1. f_derAct(), and f_sigAct()
+#     4.2 f_printWeights2Layers(), or f_printWeightsNLayers()
+#   5. f_plotSims()
+
 # Script created by Santiago Castiello and Andy Delamater (26/06/2023)
 # this code contain the model used in Castiello et al (2022) - NLM which is 
 # based on Delamater (2012) - L&B.
@@ -28,7 +50,7 @@ trPh <- dataReady$trPh
   #mod4: Contrast Hebbian Learning (CHL); Xie & Seung (2003) - Neural Computation
   #mod5: CHL with random feedback; Detorakis, et al. (2019) - Neural Networks
 
-mod_type <- "mod3" # If model 2 then must have a gamma value
+mod_type <- "mod4"
 
 # run sanity check function (warnings provided)
 f_sanityCheck()
@@ -41,13 +63,16 @@ if (mod_type == "mod1") {
   # alpha (learning rate) and beta (momentum; Delamater, 2012)
   par$alpha <- 0.3
   par$beta <- 0.9
+  label_output <- paste0("alpha",par$alpha,"_beta",par$beta)
 }
 
 ## ## ## Mod 2 ## ## ##
 if (mod_type == "mod2") {
+  par$beta <- 0.9
   # gamma and eta free parameters (smooth learning rate change; Kaye & Pearce, 1984)
   par$rho <- 0.05 # rho (p) is for weights between input to hidden 
   par$mu <- 0.01 # mu (m) is for weights between hidden to output
+  label_output <- paste0("beta",par$beta,"_rho",par$rho,"_mu",par$mu)
 }
 
 ## ## ## Mod 3 ## ## ##
@@ -56,23 +81,25 @@ if (mod_type == "mod3") {
   par$alpha <- 0.3
   par$beta <- 0.9
   par$adaptBias <- 0
+  label_output <- paste0("alpha",par$alpha,"_beta",par$beta)
 }
 
 ## ## ## Mod 4 and 5 ## ## ##
 if (mod_type == "mod4" | mod_type == "mod5") {
-  par$tf <- 10 # dynamic equation time (30)
-  par$dt <- 0.6 # time step (0.08)
-  par$adaptBias <- 0 
-  par$gamma <- 0.3 # feedback gain factor (0.05)
-  par$eta <- 0.3 # learning rate (0.1)
+  par$tf <- 15 #        dynamic equation time = 30
+  par$dt <- 0.5 #       time step = 0.08
+  par$adaptBias <- 0 #  
+  par$gamma <- 0.05 #   feedback gain factor = 0.05
+  par$eta <- 0.3 #      learning rate = 0.1
+  label_output <- paste0("tf",par$tf,"_dt",par$dt,"_gamma",par$gamma,"_eta",par$eta)
 }
 
 
 
 # weights per subj and layers (figures and csv; 1 = yes, 0 = no)
-print_weights <- 1
+print_weights <- 0
 # how many simulated subjects?
-nSim <- 2
+nSim <- 16
 
 # for loop for subjects
 message(paste("Starting ",nSim," simulations..."))
@@ -103,22 +130,54 @@ if (!exists("test")) {test <- NULL}
 if (!exists("chl_error")) {chl_error <- NULL}
 
 # if you do not want individual plots (N < 12) then change doIndPart to 0
-plots <- f_plotSims(exp,test,chl_error,par,nSim,doIndPart=1,mod_type)
+plots <- f_plotSims(exp, test, chl_error, par, nSim,
+                    doIndPart = 0, mod_type, label_output)
 
-# display plots
-# average activation
-plots$pMean
-# individual participants
-plots$pInd
-# test trials
-plots$pTest
-# LR input to hidden
-plots$pLR.IH
-# LR hidden to output
-plots$pLR.HO
-# chl errors
-plots$pChl.error
+# # display plots from the list() called "plot"
+# # plot means (pMean) average output activation
+# plots$pMean
+# # plot individuals (pInd) output activation
+# plots$pInd
+# # plot tests (pTest) average output activation in test trials
+# plots$pTest
+# # plot learning rates from input to hidden (pLR.IH)
+# plots$pLR.IH
+# # plot learning rates from hidden to output (pLR.HO)
+# plots$pLR.HO
+# # plot ch errors (pChl.error)
+# plots$pChl.error
+# 
+# # save a csv from "exp" data frame, containing output activations in long format
+# write.csv(exp,paste0("output/exp_",mod_type,"_n",nSim,".csv"),row.names = F)
 
-# print "exp" data frame, containing activation in long format
-write.csv(exp,paste0("output/exp_",mod_type,"_n",nSim,".csv"),row.names = F)
-
+# save plots
+ggsave(paste0("figures/pMean_",mod_type,"_",label_output,"_out",
+              length(unique(exp$out)),".png"), dpi = 300, limitsize = TRUE,
+       plot = plots$pMean, 
+       units = "px", # "cm", "in"
+       width = 1200,
+       height = 800)
+# save plots
+ggsave(paste0("figures/pInd_",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
+       plot = plots$pInd, 
+       units = "px",
+       width = 1200, 
+       height = 800)
+# save plots
+ggsave(paste0("figures/pLR.IH_",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
+       plot = plots$pLR.IH, 
+       units = "px",
+       width = 1200, 
+       height = 800)
+# save plots
+ggsave(paste0("figures/pLR.HO",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
+       plot = plots$pLR.HO, 
+       units = "px",
+       width = 1200, 
+       height = 800)
+# save plots
+ggsave(paste0("figures/pChl.error_",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
+       plot = plots$pChl.error, 
+       units = "px",
+       width = 1200, 
+       height = 800)

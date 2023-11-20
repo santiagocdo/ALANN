@@ -1,23 +1,34 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # ALAAN: functions.R# # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
+# # # # # Associative # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # Learning# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # Artificial# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # Neural# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # Network # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 # Script created by Santiago Castiello and Andy Delamater (28/03/2022)
-# this code contain the model used in Castiello et al (2022) - NLM which is 
+# this code contain the model used in Castiello, et al (2022) - NLM which is 
 # based on Delamater (2012) - L&B.
 
 # functions:
-  # load_libraries: load R libraries
-  # f_prepData: prepare read csv to lists to feed backprops functions
-  # f_sanityCheck: check if everything i okay (?)
+  # f_loadLibraries: load R libraries
+  # f_prepData: prepare read csv to lists to feed backpropagation functions
+  # f_sanityCheck: check that .csv input are correct
   # f_runSim: use the result of f_prepData and run one subject with multiple phases
   # f_plotSims: plot simulations mean, individuals, and tests
   # f_printWeights2Layers: each layer weights figures and csv for mod1 and mod2
   # f_printWeightsNLayers: each layer weights figures and csv for mod3 and mod4
   # f_derAct: activation's derivative 
   # f_sigAct: sigmoidal activation function
-  # f_mod1: backpropagation function for one phase, received initial weights
-  # f_mod2: backprop with dynamic LR, received initial weights as f_mod1
-  # f_mod3: backpropagation. Xie & Seung (2003) - Neural Computation
+  # f_mod1: Backpropagation function for one phase, received initial weights
+  # f_mod2: Backpropagation dynamic LR, received initial weights as f_mod1
+  # f_mod3: Backpropagation. Xie & Seung (2003) - Neural Computation
   # f_mod4: contrast hebbian leraning (CHL) based on Detorakis, et al. (2019) - Neural Networks
   # f_mod5: CHL with random feedback from Detorakis, et al. (2019) - Neural Networks
-
 
 # install or load required libraries
 f_loadLibraries <- function () {
@@ -90,7 +101,7 @@ f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
         phs[[ph]] <- f_mod1(tempPar,training=trPh[[ph]])
         exp <- data.frame(ph=ph,phs[[ph]]$db)
       } else if (mod_type == "mod2") {
-        phs[[ph]] <- f_mod2(tempPar,training=trPh[[ph]])
+        phs[[ph]] <- f_mod2(par = tempPar,training=trPh[[ph]])
         colnames(phs[[ph]]$lrIH) <- paste0(substr(colnames(phs[[ph]]$lrIH),4,
                                                   nchar(colnames(phs[[ph]]$lrIH))),"_lrIH")
         exp <- data.frame(ph=ph,phs[[ph]]$db,phs[[ph]]$lrIH,lrHO=phs[[ph]]$lrHO)
@@ -197,6 +208,8 @@ f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
       test <- melt(test, measure.vars = colnames(test)[-(1:2)])
       colnames(test)[-(1:2)] <- c("out","actOT")
     }
+  } else {
+    exp <- data.frame(exp,out="actO.1")
   }
   
   # if no model 5 was conducted then no chl errors, thus NULL
@@ -206,52 +219,64 @@ f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
   return(list(exp=exp,test=test,chl_error=chl_error,weights=weights))
 }
 
+# # # # # # # # # # Visualization and aving weights# # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 # visualization (exp data, test data, number of outputs, plot individual participants, plot test data)
-f_plotSims <- function(exp, test, chl_error, par, nSim, doIndPart = 0, mod_type = NULL) {
+f_plotSims <- function(exp, test, chl_error, par, nSim, doIndPart = 0, 
+                       mod_type = NULL, label_output = "") {
   # how many outputs?
   nOut <- length(unique(exp$out))
   
   # plot depending on number of output units
   pMean <- ggplot(exp,aes(x=nBlock,y=actO,col=trialType)) + 
-    labs(title = paste0("N = ",nSim),
-         x = "Blocks (1 block = n trial types)",
-         y = "Mean Output Activation") + 
+    labs(title = paste0(mod_type,"; N = ",nSim),
+         subtitle = label_output,
+         x = "Blocks (1 block = number of trial types)",
+         y = "Mean Output Activation",
+         col = "trial types:") + 
     geom_vline(xintercept = cumsum(par$nBlock)) +
-    stat_summary(fun.data = mean_se,geom = "errorbar", width=0) +
+    stat_summary(fun.data = mean_se, geom = "errorbar", width = 0, alpha = 0.1) +
     stat_summary(fun = "mean", geom="line") +
     coord_cartesian(ylim = c(0,1)) +
     scale_y_continuous(breaks = c(0.0,0.5,1.0)) +
     scale_x_continuous(breaks = cumsum(par$nBlock)) +
-    theme_bw()
-  if (nOut > 1) {pMean <- pMean + facet_grid(. ~ out)}
+    theme_bw() + facet_grid(. ~ out)
+  # if (nOut > 1) {pMean <- pMean + facet_grid(. ~ out)}
   
   # create individual network plots
   if (doIndPart == 1) { # always display only the first 12 networks
     pInd <- ggplot(exp[exp$nSubj < 13,],aes(x=nBlock,y=actO,col=trialType)) + 
-      labs(title = paste0("N = ",nSim),
-           x = "Blocks (1 block = n trial types)",
-           y = "Mean Output Activation") + 
+      labs(title = paste0(mod_type,"; N = ",nSim),
+           subtitle = label_output,
+           x = "Blocks (1 block = number of trial types)",
+           y = "Mean Output Activation",
+           col = "Trial Type:") + 
       geom_vline(xintercept = cumsum(par$nBlock)) +
       geom_line() + 
       coord_cartesian(ylim = c(0,1)) +
       scale_y_continuous(breaks = c(0.0,0.5,1.0)) +
       scale_x_continuous(breaks = cumsum(par$nBlock)) +
       facet_grid(nSubj ~ .) +
-      theme_bw()
-    if (nOut > 1) {pInd <- pInd + facet_grid(nSubj ~ out)}
+      theme_bw() + facet_grid(nSubj ~ out)
+    # if (nOut > 1) {pInd <- pInd + facet_grid(nSubj ~ out)}
   } else {pInd <- "no individual network plot"}
   
   # create test plot
   if (!is.null(test)) {
-    # colnames(test)[grepl("actOT",colnames(test))] <- "actOT"
+    colnames(test)[grepl("actOT",colnames(test))] <- "actOT"
     pTest <- ggplot(test, aes(x=ph,y=actOT,col=trialType)) + 
-      labs(title="Test",x="Phase",y="Mean Output Activation") +
+      labs(title = paste0(mod_type,"; N = ",nSim),
+           subtitle = label_output,
+           x="Phase",y="Mean Output Activation",
+           col = "Trial Type:") +
       scale_x_continuous(breaks = unique(test$ph)) +
       stat_summary(fun.data = mean_se,geom = "errorbar", width=0,
                    position = position_dodge(0.05)) +
       stat_summary(fun = "mean", geom = "point",position = position_dodge(0.05)) +
-      theme_bw()
-    if (nOut > 1) {pTest <- pTest + facet_grid(. ~ out)}
+      theme_bw() +  facet_grid(. ~ out)
+    # if (nOut > 1) {pTest <- pTest + facet_grid(. ~ out)}
   } else {pTest <- "no test available plot"} 
   
   # create chl_error plot
@@ -260,9 +285,9 @@ f_plotSims <- function(exp, test, chl_error, par, nSim, doIndPart = 0, mod_type 
     colnames(chl)[grepl("va",colnames(chl))] <- c("out","error")
     pChl.error <- ggplot(chl[chl$nSubj == 1,],aes(x=nBlock,y=error,col=as.factor(nHid))) +
       labs(title="CHL error",subtitle = "Network 1",x="Phase",y="Error") +
-      geom_line() + facet_grid(trialType ~ .) + 
-      theme_bw()
-    if (nOut > 1) {pChl.error <- pChl.error + facet_grid(trialType ~ out)}
+      geom_line() + # facet_grid(trialType ~ .) + 
+      theme_bw() + facet_grid(trialType ~ out)
+    # if (nOut > 1) {pChl.error <- pChl.error + facet_grid(trialType ~ out)}
   } else {pChl.error <- "no model 4 nor 5 used"} 
   
   # plot learning rates
@@ -271,8 +296,9 @@ f_plotSims <- function(exp, test, chl_error, par, nSim, doIndPart = 0, mod_type 
     # # # # figure for model type "mod2" (lrIH and lrHO) # # # #
     templr <- melt(temp,measure.vars = colnames(temp)[grepl("_lrIH",colnames(temp))])
     pLR.IH <- ggplot(templr, aes(x=nBlock,y=value,col=variable)) +
-      labs(title="Learning Rates (LR)",x="Blocks (1 block = n trial types)",
-           y="LR.IH",col="Trial Type") +
+      labs(title="Learning Rates (LR)",
+           x = "Blocks (1 block = number of trial types)",
+           y="LR.IH",col="Trial Type:") +
       geom_vline(xintercept = cumsum(par$nBlock)) +
       stat_summary(geom="line") + stat_summary() +
       scale_x_continuous(breaks = cumsum(par$nBlock)) + 
@@ -389,13 +415,21 @@ f_printWeightsNLayers <- function(weights,ph,trPh,tempPar,subj) {
   } # end k loop
 }
 
+# # # # # # # # # # Neural networks models# # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 # derivative of logistic activation function
 f_derAct <- function(act) {act * (1 - act)}
 
 # sigmoidal activation function
 f_sigAct <- function(netin, bias = -2.2) {1 / (1 + exp(-(netin + bias)))}
 
-# back propagation (Neural Net Model); run one phase
+# # # # # # # # # # Delamater (2004) - Learning & Behaviour # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# Backpropagation (Neural Net Model); run one phase
 f_mod1 <- function (par, training, nKO_MM = 0,
                     preW.IH = NULL, preW.HO = NULL) {
   ### extract parameters ###
@@ -508,12 +542,16 @@ f_mod1 <- function (par, training, nKO_MM = 0,
   return(output)
 }
 
-# back propagation dynamic alphas (Neural Net Model); run one phase
+# # # # # # # # # # Delamater & Castiello (in preparation) # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# Backpropagation dynamic alphas (Neural Net Model); run one phase
 f_mod2 <- function (par,training, nKO_MM = 0,
                     preW.IH = NULL, preW.HO = NULL,
                     preLR = NULL, preLrHO = NULL) {
   ### extract parameters ###
-  b <- par$b
+  beta <- par$beta
   rho <- par$rho
   mu <- par$mu
   nHid <- par$nHidden$nHV + par$nHidden$nHMM + par$nHidden$nHA
@@ -610,13 +648,12 @@ f_mod2 <- function (par,training, nKO_MM = 0,
       }
       
       # weight change Hidden-Output
-      dwHO[,] <- t(lrHO[trial]*(as.matrix(deltaO[trial,]) %*% actH[trial,])) + b*dwHO[,]
-      # dwHO[,] <- t(lrHO_hi[trial,]*(as.matrix(deltaO[trial,]) %*% actH[trial,])) + b*dwHO[,]
+      dwHO[,] <- t(lrHO[trial]*(as.matrix(deltaO[trial,]) %*% actH[trial,])) + beta*dwHO[,]
       # update weights Hidden-Output
       wHO[,] <- wHO[,] + dwHO[,]
       
       # weight change Input-Hidden
-      dwIH[,] <- (lrIH[trial,]*t(as.matrix(deltaH[trial,]) %*% INPUT[t,])) + b*dwIH[,]
+      dwIH[,] <- (lrIH[trial,]*t(as.matrix(deltaH[trial,]) %*% INPUT[t,])) + beta*dwIH[,]
       # update weights Input-Hidden
       wIH[,] <- wIH[,] + (dwIH[,] * conIH)
     } # end trials per block cycle # t
@@ -658,14 +695,15 @@ f_mod2 <- function (par,training, nKO_MM = 0,
 # # # # # # # # # # Xie & Seung (2003) - Neural Computations# # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# backpropagation
+
+# Backpropagation (Xie & Seung, 2003)
 f_mod3 <- function (par, training, preW = NULL) {
   ### extract parameters ###
   alpha <- par$alpha
   beta <- par$beta
   nHid <- rowSums(par$nHidden)
   nBlock <- par$nBlock
-  L <- nrow(par$nHidden)+1
+  L <- nrow(par$nHidden) + 1
   adaptBias <- par$adaptBias
   INPUT <- as.matrix(training$INPUT)
   OUTPUT <- as.matrix(training$OUTPUT)
@@ -742,7 +780,11 @@ f_mod3 <- function (par, training, preW = NULL) {
           D[[k]] <- diag(as.vector(f_derAct(f_sigAct(t(W[[k]]) %*% act0 + bias[[k]]))))
         } else {
           act[[k]] <- f_sigAct(t(W[[k]]) %*% act[[k-1]] + bias[[k]])
-          D[[k]] <- diag(as.vector(f_derAct(f_sigAct(t(W[[k]]) %*% act[[k-1]] + bias[[k]]))))
+          if (nOut > 1) {
+            D[[k]] <- diag(as.vector(f_derAct(f_sigAct(t(W[[k]]) %*% act[[k-1]] + bias[[k]]))))
+          } else {
+            D[[k]] <- diag(as.matrix(f_derAct(f_sigAct(t(W[[k]]) %*% act[[k-1]] + bias[[k]]))))
+          }
         }
       } # end k
       
@@ -811,7 +853,7 @@ f_mod3 <- function (par, training, preW = NULL) {
   return(output)
 }
 
-# contrastive Hebbian learning (CHL)
+# Contrastive Hebbian learning (CHL; Xie & Seung, 2003)
 f_mod4 <- function (par, training, preW = NULL) {
   ### extract parameters ###
   tf <- par$tf
@@ -999,7 +1041,11 @@ f_mod4 <- function (par, training, preW = NULL) {
   return(output)
 }
 
-# contrastive Hebbian learning (CHL) with random feedback
+# # # # # # # # # # Detorakis, et al. (2019) - Neural Networks# # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# Contrastive Hebbian learning (CHL) with random feedback (Detorakis, et al., 2019)
 f_mod5 <- function (par, training, preW = NULL) {
   ### extract parameters ###
   tf <- par$tf
@@ -1193,11 +1239,6 @@ f_mod5 <- function (par, training, preW = NULL) {
                  actOT=data.frame(trialType=trialTypeTest,actOT))
   return(output)
 }
-
-
-
-
-
 
 
 
