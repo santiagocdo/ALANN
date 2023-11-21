@@ -210,6 +210,10 @@ f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
     }
   } else {
     exp <- data.frame(exp,out="actO.1")
+    if (exists("test")) {
+      colnames(test)[ncol(test)] <- "actOT"
+      test <- data.frame(test,out="actO.1")
+    }
   }
   
   # if no model 5 was conducted then no chl errors, thus NULL

@@ -99,7 +99,7 @@ if (mod_type == "mod4" | mod_type == "mod5") {
 # weights per subj and layers (figures and csv; 1 = yes, 0 = no)
 print_weights <- 0
 # how many simulated subjects?
-nSim <- 3
+nSim <- 2
 
 # for loop for subjects
 message(paste("Starting ",nSim," simulations..."))
