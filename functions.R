@@ -120,7 +120,7 @@ f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
       
       # if statement to avoid errors when input file does not have TEST trials
       # else then test = NULL
-      if (nrow(phs[[ph]]$actOT) != 0) {
+      if (!is.null(phs[[ph]]$actOT)) {
         test <- data.frame(ph=ph,phs[[ph]]$actOT)
       } else {test <- NULL}
       
@@ -175,7 +175,7 @@ f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
       
       # if statement to avoid errors when input file does not have TEST trials
       # else then test = NULL
-      if (nrow(phs[[ph]]$actOT) != 0) {
+      if (!is.null(phs[[ph]]$actOT)) {
         test <- rbind(test,data.frame(ph=ph,phs[[ph]]$actOT))
       } else {test <- NULL}
       
@@ -204,13 +204,13 @@ f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
   if (ncol(as.matrix(trPh[[1]]$OUTPUT)) > 1) {
     exp <- reshape2::melt(exp,measure.vars = colnames(exp)[grepl("act",colnames(exp))])
     colnames(exp)[(ncol(exp)-1):ncol(exp)] <- c("out","actO")
-    if (exists("test")) {
+    if (!is.null(test)) {
       test <- melt(test, measure.vars = colnames(test)[-(1:2)])
       colnames(test)[-(1:2)] <- c("out","actOT")
     }
   } else {
     exp <- data.frame(exp,out="actO.1")
-    if (exists("test")) {
+    if (!is.null(test)) {
       colnames(test)[ncol(test)] <- "actOT"
       test <- data.frame(test,out="actO.1")
     }
@@ -535,14 +535,16 @@ f_mod1 <- function (par, training, nKO_MM = 0,
         actOT <- f_sigAct(f_sigAct(TEST %*% wIH_KO) %*% wHO_KO)
       } # if error message
     } # if KO mm units
-  }
+    # create output list object
+    colnames(actOT) <- paste0(rep("actOT.",nOut),1:nOut)
+    actOT <- data.frame(trialType=trialTypeTest,actOT)
+  } else {actOT <- NULL}
+  
   # outputs' activations data frame
   db <- data.frame(nTrial=1:nTrial,nBlock=rep(1:nBlock,each=nTrialType),
                    trialType=trialTypeLong,actO=actO)
-  # create output list object
-  colnames(actOT) <- paste0(rep("actOT.",nOut),1:nOut)
-  output <- list(db=db,actO=actO, wIH=wIH, wHO=wHO, 
-                 actOT=data.frame(trialType=trialTypeTest,actOT))
+  
+  output <- list(db=db,actO=actO, wIH=wIH, wHO=wHO, actOT=actOT)
   return(output)
 }
 
@@ -671,7 +673,7 @@ f_mod2 <- function (par,training, nKO_MM = 0,
   } # end all blocks cycle # nB
   
   ### test input patterns ###
-  if (nTrialTypeTest!=0){  # KO mm units when necessary
+  if (nTrialTypeTest!=0){ # KO mm units when necessary
     if (nKO_MM == 0) {
       actOT <- f_sigAct(f_sigAct(TEST %*% wIH) %*% wHO)
     } else {
@@ -684,15 +686,17 @@ f_mod2 <- function (par,training, nKO_MM = 0,
         actOT <- f_sigAct(f_sigAct(TEST %*% wIH_KO) %*% wHO_KO)
       } # if error message
     } # if KO mm units
-  }
+    # create output list object
+    colnames(actOT) <- paste0(rep("actOT.",nOut),1:nOut)
+    actOT <- data.frame(trialType=trialTypeTest,actOT)
+  } else {actOT <- NULL}
+  
   # outputs' activations data frame
   db <- data.frame(nTrial=1:nTrial,nBlock=rep(1:nBlock,each=nTrialType),
                    trialType=trialTypeLong,outDis=outDis,
                    actO=actO)
-  # create output list object
-  colnames(actOT) <- paste0(rep("actOT.",nOut),1:nOut)
-  output <- list(db=db, actO=actO, wIH=wIH, wHO=wHO, lrIH=lrIH, lrHO=lrHO,
-                 actOT=data.frame(trialType=trialTypeTest,actOT))
+  
+  output <- list(db=db, actO=actO, wIH=wIH, wHO=wHO, lrIH=lrIH, lrHO=lrHO, actOT=actOT)
   return(output)
 }
 
@@ -839,7 +843,7 @@ f_mod3 <- function (par, training, preW = NULL) {
   } # end nB blocks (epochs)
   
   ### test input patterns ###
-  if (nTrialTypeTest!=0){
+  if (nTrialTypeTest!=0) {
     for (k in 1:L) {
       if (k == 1) {
         actOT <- f_sigAct(TEST %*% W[[k]])
@@ -847,13 +851,16 @@ f_mod3 <- function (par, training, preW = NULL) {
         actOT <- f_sigAct(actOT %*% W[[k]])
       }
     } # end k layer
-  }
+    # create output list object
+    colnames(actOT) <- paste0(rep("actOT.",nOut),1:nOut)
+    actOT <- data.frame(trialType=trialTypeTest,actOT)
+  } else {actOT <- NULL}
+  
   # outputs' activations data frame
   db <- data.frame(nTrial=1:nTrial,nBlock=rep(1:nBlock,each=nTrialType),
                    trialType=trialTypeLong,actO=actO)
-  # create output list object
-  colnames(actOT) <- paste0(rep("actOT.",nOut),1:nOut)
-  output <- list(db=db, actO=actO, W=W, C=C, actOT=data.frame(trialType=trialTypeTest,actOT))
+  
+  output <- list(db=db, actO=actO, W=W, C=C, actOT=actOT)
   return(output)
 }
 
@@ -1022,7 +1029,7 @@ f_mod4 <- function (par, training, preW = NULL) {
   } # end nB blocks (epochs)
   
   ### test input patterns ###
-  if (nTrialTypeTest!=0){
+  if (nTrialTypeTest!=0) {
     for (k in 1:L) {
       if (k == 1) {
         actOT <- f_sigAct(TEST %*% W[[k]])
@@ -1030,18 +1037,19 @@ f_mod4 <- function (par, training, preW = NULL) {
         actOT <- f_sigAct(actOT %*% W[[k]])
       }
     } # end k layer
-  }
+    # create output list object
+    colnames(actOT) <- paste0(rep("actOT.",nOut),1:nOut)
+    actOT <- data.frame(trialType=trialTypeTest,actOT)
+  } else {actOT <- NULL}
   # data.frame(actOT,trialTypeTest) # see if learning took place
   
   # outputs' activations data frame
   db <- data.frame(nTrial=1:nTrial,nBlock=rep(1:nBlock,each=nTrialType),
                    trialType=trialTypeLong,actO=actO)
-  # create output list object
-  colnames(actOT) <- paste0(rep("actOT.",nOut),1:nOut)
+  
   # rename output-hidden errors columns
   colnames(chl_error)[-(1:4)] <- paste0(rep("out.",nOut),1:nOut)
-  output <- list(db=db, actO=actO, W=W, C=C, chl_error=chl_error,
-                 actOT=data.frame(trialType=trialTypeTest,actOT))
+  output <- list(db=db, actO=actO, W=W, C=C, chl_error=chl_error,actOT=actOT)
   return(output)
 }
 
@@ -1221,7 +1229,7 @@ f_mod5 <- function (par, training, preW = NULL) {
   #   geom_line() + facet_wrap(trialType~.)
   
   ### test input patterns ###
-  if (nTrialTypeTest!=0){
+  if (nTrialTypeTest!=0) {
     for (k in 1:L) {
       if (k == 1) {
         actOT <- f_sigAct(TEST %*% W[[k]])
@@ -1229,18 +1237,19 @@ f_mod5 <- function (par, training, preW = NULL) {
         actOT <- f_sigAct(actOT %*% W[[k]])
       }
     } # end k layer
-  }
+    # create output list object
+    colnames(actOT) <- paste0(rep("actOT.",nOut),1:nOut)
+    actOT <- data.frame(trialType=trialTypeTest,actOT)
+  } else {actOT <- NULL}
   # data.frame(actOT,trialTypeTest) # see if learning took place
   
   # outputs' activations data frame
   db <- data.frame(nTrial=1:nTrial,nBlock=rep(1:nBlock,each=nTrialType),
                    trialType=trialTypeLong,actO=actO)
-  # create output list object
-  colnames(actOT) <- paste0(rep("actOT.",nOut),1:nOut)
+  
   # rename output-hidden errors columns
   colnames(chl_error)[-(1:4)] <- paste0(rep("out.",nOut),1:nOut)
-  output <- list(db=db, actO=actO, W=W, G=G, C=C, chl_error=chl_error,
-                 actOT=data.frame(trialType=trialTypeTest,actOT))
+  output <- list(db=db, actO=actO, W=W, G=G, C=C, chl_error=chl_error,actOT=actOT)
   return(output)
 }
 

@@ -69,7 +69,7 @@ if (mod_type == "mod1") {
 ## ## ## Mod 2 ## ## ##
 if (mod_type == "mod2") {
   par$beta <- 0.9
-  # gamma and eta free parameters (smooth learning rate change; Kaye & Pearce, 1984)
+  # rho and mu free parameters (smooth learning rate change; Kaye & Pearce, 1984)
   par$rho <- 0.05 # rho (p) is for weights between input to hidden 
   par$mu <- 0.01 # mu (m) is for weights between hidden to output
   label_output <- paste0("beta",par$beta,"_rho",par$rho,"_mu",par$mu)
