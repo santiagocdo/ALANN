@@ -44,13 +44,14 @@ trPh <- dataReady$trPh
 
 # # # inputs for the user # # #
 # select model type: 
+  #mod0: Rescorla-Wagner (RW); Rescorla & Wagner (1972)
   #mod1: Back-Propagation (BP); Delamater (2012) - Learning & Behaviour
   #mod2: BP dynamic alpha;
   #mod3: BP; Xie & Seung (2003) - Neural Computation
   #mod4: Contrast Hebbian Learning (CHL); Xie & Seung (2003) - Neural Computation
   #mod5: CHL with random feedback; Detorakis, et al. (2019) - Neural Networks
 
-mod_type <- "mod2"
+mod_type <- "mod0"
 
 # run sanity check function (warnings provided)
 f_sanityCheck()
@@ -58,8 +59,15 @@ f_sanityCheck()
 
 
 # # # # Parameters # # # #
+## ## ## Mod 0 ## ## ##
+if (mod_type == "mod0") { # Rescorla & Wagner (1972)
+  par$alpha <- 0.3
+  par$beta <- 0.9
+  label_output <- paste0("alpha",par$alpha,"_beta",par$beta)
+}
+
 ## ## ## Mod 1 ## ## ##
-if (mod_type == "mod1") {
+if (mod_type == "mod1") { # alpha 0.3, beta 0.9
   # alpha (learning rate) and beta (momentum; Delamater, 2012)
   par$alpha <- 0.3
   par$beta <- 0.9
@@ -67,7 +75,7 @@ if (mod_type == "mod1") {
 }
 
 ## ## ## Mod 2 ## ## ##
-if (mod_type == "mod2") {
+if (mod_type == "mod2") { # beta 0.9, rho = 0.05, mu = 0.01
   par$beta <- 0.9
   # rho and mu free parameters (smooth learning rate change; Kaye & Pearce, 1984)
   par$rho <- 0.05 # rho (p) is for weights between input to hidden 
@@ -76,7 +84,7 @@ if (mod_type == "mod2") {
 }
 
 ## ## ## Mod 3 ## ## ##
-if (mod_type == "mod3") {
+if (mod_type == "mod3") { # alpha 0.3, beta 0.9
   # alpha (learning rate) and beta (momentum; Delamater, 2012)
   par$alpha <- 0.3
   par$beta <- 0.9
@@ -85,13 +93,14 @@ if (mod_type == "mod3") {
 }
 
 ## ## ## Mod 4 and 5 ## ## ##
-if (mod_type == "mod4" | mod_type == "mod5") {
+if (mod_type == "mod4" | mod_type == "mod5" | mod_type == "mod6") {
   par$tf <- 15 #        dynamic equation time = 30
-  par$dt <- 0.5 #       time step = 0.08
+  par$dt <- 0.4 #       time step = 0.08
   par$adaptBias <- 0 #  
-  par$gamma <- 0.05 #   feedback gain factor = 0.05
-  par$eta <- 0.3 #      learning rate = 0.1
-  label_output <- paste0("tf",par$tf,"_dt",par$dt,"_gamma",par$gamma,"_eta",par$eta)
+  par$gamma <- 0.2 #    feedback gain factor = 0.05
+  par$eta <- 0.4 #      learning rate = 0.1
+  label_output <- paste0("tf",par$tf,"_dt",par$dt,"_gamma",par$gamma,
+                         "_eta",par$eta,"_L",nrow(par$nHidden))
 }
 
 
@@ -99,7 +108,7 @@ if (mod_type == "mod4" | mod_type == "mod5") {
 # weights per subj and layers (figures and csv; 1 = yes, 0 = no)
 print_weights <- 0
 # how many simulated subjects?
-nSim <- 2
+nSim <- 32
 
 # for loop for subjects
 message(paste("Starting ",nSim," simulations..."))
@@ -133,22 +142,29 @@ if (!exists("chl_error")) {chl_error <- NULL}
 plots <- f_plotSims(exp, test, chl_error, par, nSim,
                     doIndPart = 0, mod_type, label_output)
 
-# display plots from the list() called "plot"
-# plot means (pMean) average output activation
-plots$pMean
-# plot individuals (pInd) output activation
-plots$pInd
-# plot tests (pTest) average output activation in test trials
-plots$pTest
-# plot learning rates from input to hidden (pLR.IH)
-plots$pLR.IH
-# plot learning rates from hidden to output (pLR.HO)
-plots$pLR.HO
-# plot ch errors (pChl.error)
-plots$pChl.error
+# # display plots from the list() called "plot"
+# # plot means (pMean) average output activation
+# plots$pMean
+# # plot individuals (pInd) output activation
+# plots$pInd
+# # plot tests (pTest) average output activation in test trials
+# plots$pTest
+# # plot learning rates from input to hidden (pLR.IH)
+# plots$pLR.IH
+# # plot learning rates from hidden to output (pLR.HO)
+# plots$pLR.HO
+# # plot ch errors (pChl.error)
+# plots$pChl.error
 
 # save a csv from "exp" data frame, containing output activations in long format
-write.csv(exp,paste0("output/exp_",mod_type,"_n",nSim,".csv"),row.names = F)
+# write.csv(exp,paste0("output/exp_",mod_type,"_n",nSim,".csv"),row.names = F)
+
+ggsave(paste0("figures/pMean_partial32_",mod_type,"_",label_output,"_out",
+              length(unique(exp$out)),".png"), dpi = 300, limitsize = TRUE,
+       plot = plots$pMean,
+       units = "px", # "cm", "in"
+       width = 1200,
+       height = 800)
 
 # # save plots
 # ggsave(paste0("figures/pMean_",mod_type,"_",label_output,"_out",

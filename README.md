@@ -1,5 +1,5 @@
 # Associative Learning with Artificial Neural Network (ALANN)
-07/12/2023
+14/01/2023
 
 
 
@@ -16,34 +16,6 @@ This project is programmed in R. Thus, the user will need to install the latest 
 ## 2. Open main.R within the project ##
 
 ## 3. Prepare the training.csv file. The columns are: ##
-  
-  phase = discrete numbers
-  
-  matType = 3 types: INPUT, OUTPUT, and TEST (optional)
-  
-  trialType = trial type names as strings 	
-  
-  in.$ = many columns as you want inputs, starting with in. then input name.  
-  
-  out.$ = many columns as you want outputs, starting with out then output name.  
-  
-  par.$ = parameters (par)
-  
-    par.nH.$ = number of hidden units (nH)
-     
-      par.nH.nHV = number of hidden visual (nHV)
-    
-      par.nH.nHMM = number of multiSmodal units (nHMM)
-    
-      par.nH.nHA = number of hidden auditory (nHA)	
-   
-    par.nI.$ = number of input units (nI)
-   
-      par.nI.ctx = number of context units (fully connected)
-     
-      par.nI.vis = number of visual units (connected with multimodal and visual hidden units)
-     
-      par.nI.aud = number of auditory units (connected with multimodal and auditory hidden units)
       
 ## 4. Adjust the main.R script: ##
   
@@ -59,9 +31,9 @@ This project is programmed in R. Thus, the user will need to install the latest 
     
     mod5: CHL with random feedback; Detorakis, et al. (2019) - Neural Networks
   
-  4.2. Adjust parameters depending on the model (modType) in lines 64 to 90.
+  4.2. Adjust parameters depending on the model (modType) in lines 64 to 93.
   
-## 5. Visualize Figures from lines 138 to 148 ##
+## 5. Visualize Figures from lines 139 to 149 ##
 
 
 
@@ -83,23 +55,33 @@ This project is programmed in R. Thus, the user will need to install the latest 
 
 -*.csv (csv file): this are input files for a simulation
   
-  -phase: phases (integer numbers)
+  phase = discrete numbers
   
-  -matType: three values (INPUT, OUTPUT, and TEST; the last is optional)
+  matType = three values (INPUT, OUTPUT, and TEST; the last is optional)
   
-  -trialType: character, to identify the trials for training (INPUT and OUTPUT) and TEST
+  trialType = trial types as character, identify the trials for training (INPUT and OUTPUT) and TEST
   
-  -in.*: input units, where each column should be called different starting with "in."
+  in.$ = input units, where each column should be called different starting with "in." 
   
-  -out.*: output units, where each column should be called different starting with "out."
+  out.$ = output units, where each column should be called different starting with "out."
   
-  -par.*: parameters 
+  par.$ = parameters (par)
   
-    -par.nBlock: each row of this column correspond to the number of blocks for each phase
-  
-    -par.nH.*: number of hidden units, visual, multimodal, and auditory (nHV, nHMM, nHA)
-  
-    -par.nI.*: number of input units, context, visual, and auditory (ctx, vis, aud)
+    par.nH.$ = number of hidden units (nH)
+     
+      par.nH.nHV = number of hidden visual (nHV)
+    
+      par.nH.nHMM = number of multiSmodal units (nHMM)
+    
+      par.nH.nHA = number of hidden auditory (nHA)	
+   
+    par.nI.$ = number of input units (nI)
+   
+      par.nI.ctx = number of context units (fully connected)
+     
+      par.nI.vis = number of visual units (connected with multimodal and visual hidden units)
+     
+      par.nI.aud = number of auditory units (connected with multimodal and auditory hidden units)
 
 
 

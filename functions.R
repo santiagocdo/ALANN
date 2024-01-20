@@ -29,6 +29,7 @@
   # f_mod3: Backpropagation. Xie & Seung (2003) - Neural Computation
   # f_mod4: contrast hebbian leraning (CHL) based on Detorakis, et al. (2019) - Neural Networks
   # f_mod5: CHL with random feedback from Detorakis, et al. (2019) - Neural Networks
+  # f_mod6: same as model 5 but with dynamic learning rate
 
 # install or load required libraries
 f_loadLibraries <- function () {
@@ -80,6 +81,9 @@ f_sanityCheck <- function() {
   if (mod_type == "mod3") {
     warning("make sure you declare the bias term (i.e., adaptBias)")
   }
+  if (mod_type == "mod4" | mod_type == "mod5") {
+    warning("running CHL, this will be slow")
+  }
 } 
 
 # run simulation for one subject all phases (uses f_mod1)
@@ -97,25 +101,36 @@ f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
       tempPar <- par
       tempPar$nBlock <- par$nBlock[ph]
       # run neural network models
-      if (mod_type == "mod1") {
-        phs[[ph]] <- f_mod1(tempPar,training=trPh[[ph]])
+      if (mod_type == "mod0") {
+        phs[[ph]] <- f_mod0(par=tempPar,training=trPh[[ph]])
+        exp <- data.frame(ph=ph,phs[[ph]]$db)
+      } else if (mod_type == "mod1") {
+        phs[[ph]] <- f_mod1(par=tempPar,training=trPh[[ph]])
         exp <- data.frame(ph=ph,phs[[ph]]$db)
       } else if (mod_type == "mod2") {
-        phs[[ph]] <- f_mod2(par = tempPar,training=trPh[[ph]])
+        phs[[ph]] <- f_mod2(par=tempPar,training=trPh[[ph]])
         colnames(phs[[ph]]$lrIH) <- paste0(substr(colnames(phs[[ph]]$lrIH),4,
                                                   nchar(colnames(phs[[ph]]$lrIH))),"_lrIH")
         exp <- data.frame(ph=ph,phs[[ph]]$db,phs[[ph]]$lrIH,lrHO=phs[[ph]]$lrHO)
       } else if (mod_type == "mod3") {
-        phs[[ph]] <- f_mod3(tempPar,training=trPh[[ph]])
+        phs[[ph]] <- f_mod3(par=tempPar,training=trPh[[ph]])
         exp <- data.frame(ph=ph,phs[[ph]]$db)
       } else if (mod_type == "mod4") {
-        phs[[ph]] <- f_mod4(tempPar,training=trPh[[ph]])
+        phs[[ph]] <- f_mod4(par=tempPar,training=trPh[[ph]])
         exp <- data.frame(ph=ph,phs[[ph]]$db)
         chl_error <- data.frame(ph=ph,phs[[ph]]$chl_error)
-      }  else if (mod_type == "mod5") {
-        phs[[ph]] <- f_mod5(tempPar,training=trPh[[ph]])
+      } else if (mod_type == "mod5") {
+        phs[[ph]] <- f_mod5(par=tempPar,training=trPh[[ph]])
         exp <- data.frame(ph=ph,phs[[ph]]$db)
-        chl_error <- data.frame(ph=ph,phs[[ph]]$chl_error)
+        if (nrow(par$nHidden) == 1) {
+          chl_error <- data.frame(ph=ph,phs[[ph]]$chl_error)
+        }
+      } else if (mod_type == "mod6") {
+        phs[[ph]] <- f_mod6(par=tempPar,training=trPh[[ph]])
+        exp <- data.frame(ph=ph,phs[[ph]]$db)
+        if (nrow(par$nHidden) == 1) {
+          chl_error <- data.frame(ph=ph,phs[[ph]]$chl_error)          
+        }
       } else {warning("not model type specified [see mod_type]")}
       
       # if statement to avoid errors when input file does not have TEST trials
@@ -132,7 +147,12 @@ f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
       tempPar <- par
       tempPar$nBlock <- par$nBlock[ph]
       # run neural network models
-      if (mod_type == "mod1") {
+      if (mod_type == "mod0") {
+        phs[[ph]] <- f_mod0(par=tempPar,training=trPh[[ph]],preW=phs[[ph-1]]$W)
+        # add correct number of blocks
+        phs[[ph]]$db$nBlock <- phs[[ph]]$db$nBlock + max(exp$nBlock)
+        exp <- rbind(exp,data.frame(ph=ph,phs[[ph]]$db))
+      } else if(mod_type == "mod1") {
         phs[[ph]] <- f_mod1(par=tempPar,training=trPh[[ph]],
                             preW.IH=phs[[ph-1]]$wIH,preW.HO=phs[[ph-1]]$wHO)
         # add correct number of blocks
@@ -170,7 +190,20 @@ f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
         # add correct number of blocks
         phs[[ph]]$db$nBlock <- phs[[ph]]$db$nBlock + max(exp$nBlock)
         exp <- rbind(exp,data.frame(ph=ph,phs[[ph]]$db))
-        chl_error <- rbind(chl_error,data.frame(ph=ph,phs[[ph]]$chl_error))
+        if (nrow(par$nHidden) == 1) {
+          chl_error <- rbind(chl_error,data.frame(ph=ph,phs[[ph]]$chl_error))        
+        }
+      } else if (mod_type == "mod6") {
+        phs[[ph]] <- f_mod6(par=tempPar,training=trPh[[ph]],
+                            preW=list(W=phs[[ph-1]]$W,
+                                      G=phs[[ph-1]]$G,
+                                      C=phs[[ph-1]]$C))
+        # add correct number of blocks
+        phs[[ph]]$db$nBlock <- phs[[ph]]$db$nBlock + max(exp$nBlock)
+        exp <- rbind(exp,data.frame(ph=ph,phs[[ph]]$db))
+        if (nrow(par$nHidden) == 1) {
+          chl_error <- rbind(chl_error,data.frame(ph=ph,phs[[ph]]$chl_error))        
+        }
       } else {warning("not model type specified [see mod_type]")}
       
       # if statement to avoid errors when input file does not have TEST trials
@@ -192,12 +225,14 @@ f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
     
     # print weights
     if (print_weights == 1) {
-      if (nrow(par$nHidden)==1) { # if 3 layers (input, hidden, output)
-        f_printWeights2Layers(weights,ph,trPh,tempPar,subj)
-      } else { # L > 2
-        f_printWeightsNLayers(weights,ph,trPh,tempPar,subj)
-      }
-    }
+      if (mod_type != "mod0") {
+        if (nrow(par$nHidden)==1) { # if 3 layers (input, hidden, output)
+          f_printWeights2Layers(weights,ph,trPh,tempPar,subj)
+        } else { # L > 2
+          f_printWeightsNLayers(weights,ph,trPh,tempPar,subj)
+        }
+      } # end if mod_type
+    } # end if print_weights
   } # end for phase
   
   # melt (i.e., create long format data.frames) for better visualization
@@ -223,7 +258,7 @@ f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
   return(list(exp=exp,test=test,chl_error=chl_error,weights=weights))
 }
 
-# # # # # # # # # # Visualization and aving weights# # # # # # # # # # # # # #
+# # # # # # # # # # Visualization and having weights# # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -433,6 +468,84 @@ f_sigAct <- function(netin, bias = -2.2) {1 / (1 + exp(-(netin + bias)))}
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+# Rescorla-Wagner Model; run one phase
+f_mod0 <- function (par, training, preW = NULL) {
+  ### extract parameters ###
+  alpha <- par$alpha
+  beta <- par$beta
+  nBlock <- par$nBlock
+  INPUT <- as.matrix(training$INPUT)
+  OUTPUT <- as.matrix(training$OUTPUT)
+  TEST <- as.matrix(training$TEST)
+  trialType <- training$trialType
+  trialTypeTest <- training$trialTypeTest
+  
+  ### create relevant matrices and scalars ###
+  nOut <- ncol(OUTPUT) # number of outcomes
+  nStim <- ncol(INPUT) # number of stimuli
+  nTrialType <- nrow(INPUT) # number of trial types
+  nTrialTypeTest <- nrow(TEST) # number of test trials
+  nTrial <- nTrialType*nBlock # number of total trials
+  
+  ### creation of matrices and add initial values ###
+  actOT <- matrix(NA,nrow = nTrialTypeTest, ncol = nOut) # act. output for test
+  actO <- matrix(NA,nrow = nTrial, ncol = nOut) # act. output layer
+  deltaO <- matrix(NA,nrow = nTrial, ncol = nOut) # delta output
+  # initial values (random or previous phases)
+  if (is.null(preW)) {
+    W <- matrix(0, nrow=nStim, ncol=nOut)
+  } else {W <- preW}
+  
+  #### learning algorithm ###
+  # see also: https://web.stanford.edu/group/pdplab/pdphandbook/handbookch6.html
+  for (nB in 1:nBlock) {
+    # randomized trial types within a block
+    randT <- sample(1:nTrialType)
+    INPUT <- as.matrix(INPUT[randT,])
+    OUTPUT <- as.matrix(OUTPUT[randT,])
+    trialType <- trialType[randT]
+    for (t in 1:nTrialType) {
+      ### ### ### activation ### ### ### 
+      trial <- t+((nB-1)*nTrialType)
+      
+      actO[trial,] <- INPUT[t,] %*% W[,] # INPUT[t,] assumed to be a 1 x nStim matrix
+        
+      ### ### ### learning (weight changes) ### ######
+      
+      ### delta (error) for output
+      deltaO[trial,] <- OUTPUT[t,] - actO[trial,]
+      
+      # update weights Hidden-Output
+      W[,] <- W[,] + alpha * beta * (INPUT[t,] %*% t(deltaO[trial,]))
+      
+    } # end trials per block cycle # t
+    if (nB == 1) {
+      trialTypeLong <- as.character(trialType)
+    } else {
+      trialTypeLong <- c(trialTypeLong,as.character(trialType))
+    }
+  } # end all blocks cycle # nB
+  
+  ### test input patterns ###
+  if (nTrialTypeTest != 0){  # KO mm units when necessary
+    actOT <- TEST %*% wIO[nTrial,,]
+    # create output list object
+    colnames(actOT) <- paste0(rep("actOT.",nOut),1:nOut)
+    actOT <- data.frame(trialType=trialTypeTest,actOT)
+  } else {actOT <- NULL}
+  
+  # outputs' activations data frame
+  db <- data.frame(nTrial=1:nTrial,nBlock=rep(1:nBlock,each=nTrialType),
+                   trialType=trialTypeLong,actO=actO)
+  
+  output <- list(db=db, actO=actO, W=W, actOT=actOT)
+  return(output)
+}
+
+# # # # # # # # # # Delamater (2004) - Learning & Behaviour # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 # Backpropagation (Neural Net Model); run one phase
 f_mod1 <- function (par, training, nKO_MM = 0,
                     preW.IH = NULL, preW.HO = NULL) {
@@ -473,11 +586,11 @@ f_mod1 <- function (par, training, nKO_MM = 0,
   ### remove connections for hidden auditory and visual paths ###
   conIH <- matrix(1, nrow = nStim, ncol = nHid) # C matrix in Castiello et al (2022) - NLM
   # block visual input with auditory hidden
-  if (par$nHidden$nHA > 0) {
+  if (par$nHidden$nHA > 0 & par$nInput$vis > 0) {
     conIH[(par$nInput$ctx+1):(par$nInput$ctx + par$nInput$vis),
           (nHid-par$nHidden$nHA + 1):nHid] <- 0}
   # block auditory input with visual hidden
-  if (par$nHidden$nHV > 0) {
+  if (par$nHidden$nHV > 0 & par$nInput$aud > 0) {
     conIH[(par$nInput$ctx + par$nInput$vis + 1):nStim,
           1:par$nHidden$nHV] <- 0}
   wIH <- wIH * conIH
@@ -599,11 +712,11 @@ f_mod2 <- function (par,training, nKO_MM = 0,
   ### remove connections for hidden auditory and visual paths ###
   conIH <- matrix(1, nrow = nStim, ncol = nHid) # C matrix in Castiello et al (2022) - NLM
   # block visual input with auditory hidden
-  if (par$nHidden$nHA > 0) {
+  if (par$nHidden$nHA > 0 & par$nInput$vis > 0) {
     conIH[(par$nInput$ctx+1):(par$nInput$ctx + par$nInput$vis),
           (nHid-par$nHidden$nHA + 1):nHid] <- 0}
   # block auditory input with visual hidden
-  if (par$nHidden$nHV > 0) {
+  if (par$nHidden$nHV > 0 & par$nInput$aud > 0) {
     conIH[(par$nInput$ctx + par$nInput$vis + 1):nStim,
           1:par$nHidden$nHV] <- 0}
   wIH <- wIH * conIH
@@ -642,7 +755,7 @@ f_mod2 <- function (par,training, nKO_MM = 0,
         } else { # phase > 1
           temp <- rho*outDis[trial]*INPUT[t,] + (1-rho)*preLR[nrow(preLR),]*INPUT[t,]
           # carrying over previous learning rates of absent stimuli
-          lrIH[trial,] <- rho + preLR[nrow(preLR),]*(1-INPUT[t,])
+          lrIH[trial,] <- temp + preLR[nrow(preLR),]*(1-INPUT[t,])
           lrHO[trial] <- mu*(1-outDis[trial])+(1-mu)*preLrHO[length(preLrHO)]
         }
       } else { # trial > 1
@@ -736,25 +849,25 @@ f_mod3 <- function (par, training, preW = NULL) {
       W[[k]] <- matrix(runif(nUnits[k]*nUnits[k+1])-0.5,nrow = nUnits[k], ncol = nUnits[k+1])
       ### remove connections for hidden auditory and visual paths ###
       C[[k]] <- matrix(1, nrow = nUnits[k], ncol = nUnits[k+1]) # C matrix in Castiello et al (2022) - NLM
-      if (k < L) { # maybe remove
+      if (k < L) {
         if (k == 1) {
           # block visual input with auditory hidden
-          if (par$nHidden$nHA[k] > 0) {
+          if (par$nHidden$nHA[k] > 0 & par$nInput$vis > 0) {
             C[[k]][(par$nInput$ctx+1):(par$nInput$ctx + par$nInput$vis),
-              (nUnits[k+1]-par$nHidden$nHA[k] + 1):nUnits[k+1]] <- 0}
+                   (nUnits[k+1]-par$nHidden$nHA[k] + 1):nUnits[k+1]] <- 0}
           # block auditory input with visual hidden
-          if (par$nHidden$nHV[k] > 0) {
+          if (par$nHidden$nHV[k] > 0 & par$nInput$aud > 0) {
             C[[k]][(par$nInput$ctx + par$nInput$vis + 1):nUnits[k],
-              1:par$nHidden$nHV[k]] <- 0}
+                   1:par$nHidden$nHV[k]] <- 0}
         } else {
           if (par$nHidden$nHA[k] > 0) { # block visual input with auditory hidden
             C[[k]][1:par$nHidden$nHV[k-1],
                    (nUnits[k+1]-par$nHidden$nHA[k] + 1):nUnits[k+1]] <- 0}
           if (par$nHidden$nHV[k] > 0) { # block auditory input with visual hidden
             C[[k]][(nUnits[k]-par$nHidden$nHV[k-1]+1):nUnits[k],
-              1:par$nHidden$nHV[k]] <- 0}
+                   1:par$nHidden$nHV[k]] <- 0}
         }
-      } # end k < L 
+      }
       W[[k]] <- W[[k]] * C[[k]]
     }
   } else {W <- preW$W; C <- preW$C}
@@ -901,11 +1014,11 @@ f_mod4 <- function (par, training, preW = NULL) {
       if (k < L) {
         if (k == 1) {
           # block visual input with auditory hidden
-          if (par$nHidden$nHA[k] > 0) {
+          if (par$nHidden$nHA[k] > 0 & par$nInput$vis > 0) {
             C[[k]][(par$nInput$ctx+1):(par$nInput$ctx + par$nInput$vis),
                    (nUnits[k+1]-par$nHidden$nHA[k] + 1):nUnits[k+1]] <- 0}
           # block auditory input with visual hidden
-          if (par$nHidden$nHV[k] > 0) {
+          if (par$nHidden$nHV[k] > 0 & par$nInput$aud > 0) {
             C[[k]][(par$nInput$ctx + par$nInput$vis + 1):nUnits[k],
                    1:par$nHidden$nHV[k]] <- 0}
         } else {
@@ -1097,11 +1210,11 @@ f_mod5 <- function (par, training, preW = NULL) {
       if (k < L) {
         if (k == 1) {
           # block visual input with auditory hidden
-          if (par$nHidden$nHA[k] > 0) {
+          if (par$nHidden$nHA[k] > 0 & par$nInput$vis > 0) {
             C[[k]][(par$nInput$ctx+1):(par$nInput$ctx + par$nInput$vis),
                    (nUnits[k+1]-par$nHidden$nHA[k] + 1):nUnits[k+1]] <- 0}
           # block auditory input with visual hidden
-          if (par$nHidden$nHV[k] > 0) {
+          if (par$nHidden$nHV[k] > 0 & par$nInput$aud > 0) {
             C[[k]][(par$nInput$ctx + par$nInput$vis + 1):nUnits[k],
                    1:par$nHidden$nHV[k]] <- 0}
         } else {
@@ -1188,6 +1301,219 @@ f_mod5 <- function (par, training, preW = NULL) {
         } else {
           error <- t(xUp[[k]]%*%t(xUp[[k-1]]) - xDo[[k]]%*%t(xDo[[k-1]]))
           dW <- eta*gamma^(k-L) * error
+        }
+        W[[k]] <- W[[k]] + dW * C[[k]]
+      }
+      
+      ### accumulate activations per trial ###
+      if (j == 1) {
+        inpEp <- t(xDo0)
+        outEp <- t(xUp[[L]])
+        actOEp <- t(xDo[[L]])
+        # record error activation
+        if (length(nHid) < 2) {
+          chl <- data.frame(trial=j,trialType=trialType[j],
+                            nHid=1:nHid,error)
+        }
+      } else {
+        inpEp <- rbind(inpEp,t(xDo0))
+        outEp <- rbind(outEp,t(xUp[[L]]))
+        actOEp <- rbind(actOEp,t(xDo[[L]]))
+        if (length(nHid) < 2) {
+          chl <- rbind(chl,data.frame(trial=j,trialType=trialType[j],
+                                      nHid=1:nHid,error))
+        }
+      }
+    } # end j (nTrialType)
+    
+    ### accumulate activations per blocks ###
+    if (nB == 1) {
+      inp <- inpEp
+      out <- outEp
+      actO <- actOEp
+      trialTypeLong <- as.character(trialType)
+      if (length(nHid) < 2) {
+        chl_error <- data.frame(nBlock=nB,chl)
+      }
+    } else {
+      inp <- rbind(inp,inpEp)
+      out <- rbind(out,outEp)
+      actO <- rbind(actO,actOEp)
+      trialTypeLong <- c(trialTypeLong,as.character(trialType))
+      if (length(nHid) < 2) {
+        chl_error <- rbind(chl_error,data.frame(nBlock=nB,chl))
+      }
+    }
+  } # end nB blocks (epochs)
+  # visualize chl errors
+  # ggplot(chl,aes(x=nBlock,y=error,col=as.factor(nHid))) +
+  #   geom_line() + facet_wrap(trialType~.)
+  
+  ### test input patterns ###
+  if (nTrialTypeTest!=0) {
+    for (k in 1:L) {
+      if (k == 1) {
+        actOT <- f_sigAct(TEST %*% W[[k]])
+      } else {
+        actOT <- f_sigAct(actOT %*% W[[k]])
+      }
+    } # end k layer
+    # create output list object
+    colnames(actOT) <- paste0(rep("actOT.",nOut),1:nOut)
+    actOT <- data.frame(trialType=trialTypeTest,actOT)
+  } else {actOT <- NULL}
+  # data.frame(actOT,trialTypeTest) # see if learning took place
+  
+  # outputs' activations data frame
+  db <- data.frame(nTrial=1:nTrial,nBlock=rep(1:nBlock,each=nTrialType),
+                   trialType=trialTypeLong,actO=actO)
+  
+  # rename output-hidden errors columns
+  if (exists("chl_error")) {
+    colnames(chl_error)[-(1:4)] <- paste0(rep("out.",nOut),1:nOut)
+  } else {chl_error <- NULL}
+
+  output <- list(db=db, actO=actO, W=W, G=G, C=C, chl_error=chl_error,actOT=actOT)
+  return(output)
+}
+
+# # # # # # # # # # Detorakis with adaptive (Pearce) learning rate # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# CHL with random feedback (Detorakis, et al., 2019) and adaptive learning rate
+f_mod6 <- function (par, training, preW = NULL) {
+  ### extract parameters ###
+  tf <- par$tf
+  dt <- par$dt
+  gamma <- par$gamma
+  eta <- par$eta
+  nHid <- rowSums(par$nHidden)
+  nBlock <- par$nBlock
+  L <- nrow(par$nHidden)+1
+  adaptBias <- par$adaptBias
+  INPUT <- as.matrix(training$INPUT)
+  OUTPUT <- as.matrix(training$OUTPUT)
+  TEST <- as.matrix(training$TEST)
+  trialType <- training$trialType
+  trialTypeTest <- training$trialTypeTest
+  
+  ### create relevant matrices and scalars ###
+  nOut <- ncol(OUTPUT) # number of outcomes
+  nStim <- ncol(INPUT) # number of stimuli
+  nTrialType <- nrow(INPUT) # number of trial types
+  nTrialTypeTest <- nrow(TEST) # number of test trials
+  nTrial <- nTrialType*nBlock # number of total trials
+  
+  ### vector with number of units ###
+  nUnits <- c(nStim,nHid,nOut)
+  
+  ### list with weights matrices per layer k ###
+  if (is.null(preW)) {
+    W <- G <- C <- list()
+    for (k in 1:L) {
+      # random weights matrices
+      W[[k]] <- matrix(runif(nUnits[k]*nUnits[k+1])-0.5,nrow = nUnits[k], ncol = nUnits[k+1])
+      # random feedback gain
+      G[[k]] <- matrix(runif(nUnits[k]*nUnits[k+1])-0.5,nrow = nUnits[k], ncol = nUnits[k+1])
+      ### remove connections for hidden auditory and visual paths ###
+      C[[k]] <- matrix(1, nrow = nUnits[k], ncol = nUnits[k+1]) # C matrix in Castiello et al (2022) - NLM
+      if (k < L) {
+        if (k == 1) {
+          # block visual input with auditory hidden
+          if (par$nHidden$nHA[k] > 0 & par$nInput$vis > 0) {
+            C[[k]][(par$nInput$ctx+1):(par$nInput$ctx + par$nInput$vis),
+                   (nUnits[k+1]-par$nHidden$nHA[k] + 1):nUnits[k+1]] <- 0}
+          # block auditory input with visual hidden
+          if (par$nHidden$nHV[k] > 0 & par$nInput$aud > 0) {
+            C[[k]][(par$nInput$ctx + par$nInput$vis + 1):nUnits[k],
+                   1:par$nHidden$nHV[k]] <- 0}
+        } else {
+          if (par$nHidden$nHA[k] > 0) { # block visual input with auditory hidden
+            C[[k]][1:par$nHidden$nHV[k-1],
+                   (nUnits[k+1]-par$nHidden$nHA[k] + 1):nUnits[k+1]] <- 0}
+          if (par$nHidden$nHV[k] > 0) { # block auditory input with visual hidden
+            C[[k]][(nUnits[k]-par$nHidden$nHV[k-1]+1):nUnits[k],
+                   1:par$nHidden$nHV[k]] <- 0}
+        }
+      }
+      W[[k]] <- W[[k]] * C[[k]]
+      G[[k]] <- G[[k]] * C[[k]]
+    }
+  } else {W <- preW$W; G <- preW$G; C <- preW$C}
+  
+  ### list with activation (xUp and xDown) and biases (bias) per layer k ###
+  # note: inputs does not have a space in act 
+  xUp <- xDo <- bias <- dW <- list()
+  for (k in 1:L) {
+    xUp[[k]] <- matrix(rep(f_sigAct(0),nUnits[k+1]),nrow = nUnits[k+1])
+    xDo[[k]] <- matrix(rep(f_sigAct(0),nUnits[k+1]),nrow = nUnits[k+1])
+    bias[[k]] <- matrix(adaptBias,nrow=nUnits[k+1])
+    dW[[k]] <- matrix(0, nrow = nUnits[k], ncol = nUnits[k+1])
+  }
+  
+  ### run epochs or blocks ###
+  for (nB in 1:nBlock) {
+    # randomized trial types within a block
+    randT <- sample(1:nTrialType)
+    INPUT <- as.matrix(INPUT[randT,])
+    OUTPUT <- as.matrix(OUTPUT[randT,])
+    trialType <- trialType[randT]
+    
+    ### run trials within a block ###
+    for (j in 1:nTrialType) {
+      xDo0 <- as.vector(INPUT[j,])
+      xUp[[L]] <- as.vector(OUTPUT[j,])
+      xUp0 <- as.vector(INPUT[j,])
+      
+      ## ## Contrastive Hebbian Learning ## ##
+      # 1. dynamic equations # # # # # # # # # # # # # # # # # # # #
+      # # # # Clamped Phase  # # # # # # # # # # # # # # # # # # # #
+      # create xUp2 for visualization purposes
+      xUp2 <- xUp # Up is clamped phase
+      for (ts in 1:tf) {
+        for (k in (L-1):1) {
+          if (k == 1) { # k-1 should be xUp 0
+            temp <- f_sigAct( t(W[[k]])%*%xUp0 + gamma*G[[k+1]]%*%xUp[[k+1]] + bias[[k]] )
+          } else { # regular k layer
+            temp <- f_sigAct( t(W[[k]])%*%xUp[[k-1]] + gamma*G[[k+1]]%*%xUp[[k+1]] + bias[[k]] )
+          }
+          xUp[[k]] <- xUp[[k]] + dt * (-xUp[[k]] + temp)
+          # accumulate activation for visualization purposes
+          xUp2[[k]] <- cbind(xUp2[[k]], xUp[[k]])
+        }
+      }
+      # ggplot(melt(t(xUp2[[1]])),aes(x=Var1,y=value,col=as.factor(Var2))) + geom_line()
+      
+      # # # # Free Phase # # # # # # # # # # # # # # # # # # # #
+      # create xD02 for visualization purposes
+      xDo2 <- xDo # Do(wn) is free phase
+      for (ts in 1:tf) {
+        for (k in 1:L) {
+          if (k == 1) { # k-1 should be xDown 0
+            temp <- f_sigAct( t(W[[k]])%*%xDo0 + gamma*G[[k+1]]%*%xDo[[k+1]] + bias[[k]])
+          } else if (k == L) { # k+1 does not exist
+            temp <- f_sigAct( t(W[[k]])%*%xDo[[k-1]] + bias[[k]])
+          } else { # regular k layer
+            temp <- f_sigAct( t(W[[k]])%*%xDo[[k-1]] + gamma*G[[k+1]]%*%xDo[[k+1]] + bias[[k]])
+          }
+          xDo[[k]] <- xDo[[k]] + dt * (-xDo[[k]] + temp)
+          # accumulate activation for visualization purposes
+          xDo2[[k]] <- cbind(xDo2[[k]],xDo[[k]])
+        }
+      }
+      # ggplot(melt(t(xDo2[[1]])),aes(x=Var1,y=value,col=as.factor(Var2))) + geom_line()
+      # ggplot(melt(t(xDo2[[2]])),aes(x=Var1,y=value,col=as.factor(Var2))) + geom_line()
+      
+      # 4. Hebbian update # # # # # # # # # # # # # # # # # # # #
+      for (k in 1:L) {
+        if (k == 1) {
+          # dW <- eta*gamma^(k-L) * t(xUp[[k]]%*%t(xUp0) - xDo[[k]]%*%t(xDo0))
+          dW <- eta*gamma * t(xUp[[k]]%*%t(xUp0) - xDo[[k]]%*%t(xDo0))
+        } else {
+          error <- t(xUp[[k]]%*%t(xUp[[k-1]]) - xDo[[k]]%*%t(xDo[[k-1]]))
+          # dW <- eta*gamma^(k-L) * error
+          dW <- eta*gamma * error
         }
         W[[k]] <- W[[k]] + dW * C[[k]]
       }
