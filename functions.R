@@ -24,7 +24,8 @@
   # f_printWeightsNLayers: each layer weights figures and csv for mod3 and mod4
   # f_derAct: activation's derivative 
   # f_sigAct: sigmoidal activation function
-  # f_mod1: Backpropagation function for one phase, received initial weights
+  # f_mod0: Rescorla-Wagner model
+  # f_mod1: Backpropagation function for one phase, received initial weights. Delamater (2012) - L&B
   # f_mod2: Backpropagation dynamic LR, received initial weights as f_mod1
   # f_mod3: Backpropagation. Xie & Seung (2003) - Neural Computation
   # f_mod4: contrast hebbian leraning (CHL) based on Detorakis, et al. (2019) - Neural Networks
@@ -87,7 +88,7 @@ f_sanityCheck <- function() {
 } 
 
 # run simulation for one subject all phases (uses f_mod1)
-f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
+f_runSim <- function (par, trPh, subj, print_weights = F, mod_type = "mod1") {
   # create phases list to receive all information from models functions
   phs <- list()
   # create weights list to accumulate weights from phases
@@ -224,7 +225,7 @@ f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
     }
     
     # print weights
-    if (print_weights == 1) {
+    if (print_weights) {
       if (mod_type != "mod0") {
         if (nrow(par$nHidden)==1) { # if 3 layers (input, hidden, output)
           f_printWeights2Layers(weights,ph,trPh,tempPar,subj)
@@ -263,8 +264,8 @@ f_runSim <- function (par, trPh, subj, print_weights = 0, mod_type = "mod1") {
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # visualization (exp data, test data, number of outputs, plot individual participants, plot test data)
-f_plotSims <- function(exp, test, chl_error, par, nSim, doIndPart = 0, 
-                       mod_type = NULL, label_output = "") {
+f_plotSims <- function(exp, test, chl_error, par, nSim, doIndPart = F, 
+                       mod_type, label_output = "") {
   # how many outputs?
   nOut <- length(unique(exp$out))
   
@@ -285,7 +286,7 @@ f_plotSims <- function(exp, test, chl_error, par, nSim, doIndPart = 0,
   # if (nOut > 1) {pMean <- pMean + facet_grid(. ~ out)}
   
   # create individual network plots
-  if (doIndPart == 1) { # always display only the first 12 networks
+  if (doIndPart) { # always display only the first 12 networks
     pInd <- ggplot(exp[exp$nSubj < 13,],aes(x=nBlock,y=actO,col=trialType)) + 
       labs(title = paste0(mod_type,"; N = ",nSim),
            subtitle = label_output,
@@ -473,6 +474,7 @@ f_mod0 <- function (par, training, preW = NULL) {
   ### extract parameters ###
   alpha <- par$alpha
   beta <- par$beta
+  betaNR <- par$betaNR
   nBlock <- par$nBlock
   INPUT <- as.matrix(training$INPUT)
   OUTPUT <- as.matrix(training$OUTPUT)
@@ -516,8 +518,13 @@ f_mod0 <- function (par, training, preW = NULL) {
       deltaO[trial,] <- OUTPUT[t,] - actO[trial,]
       
       # update weights Hidden-Output
-      W[,] <- W[,] + alpha * beta * (INPUT[t,] %*% t(deltaO[trial,]))
-      
+      for (o in 1:nOut) {
+        if (OUTPUT[t,o] == 1) {
+          W[,] <- W[,] + alpha * beta * (INPUT[t,] %*% t(deltaO[trial,o]))
+        } else {
+          W[,] <- W[,] + alpha * betaNR * (INPUT[t,] %*% t(deltaO[trial,o]))
+        }
+      }
     } # end trials per block cycle # t
     if (nB == 1) {
       trialTypeLong <- as.character(trialType)
@@ -528,7 +535,7 @@ f_mod0 <- function (par, training, preW = NULL) {
   
   ### test input patterns ###
   if (nTrialTypeTest != 0){  # KO mm units when necessary
-    actOT <- TEST %*% wIO[nTrial,,]
+    actOT <- TEST %*% W[,]
     # create output list object
     colnames(actOT) <- paste0(rep("actOT.",nOut),1:nOut)
     actOT <- data.frame(trialType=trialTypeTest,actOT)

@@ -8,7 +8,7 @@ f_loadLibraries()
 # functions
 oneCsvAnd2ndPhase <- function (trPh,par,mod_type,nSim,group="partial") {
   # weights per subj and layers (figures and csv; 1 = yes, 0 = no)
-  print_weights <- 0
+  print_weights <- F
   
   # for loop for subjects
   for (s in 1:nSim) {
