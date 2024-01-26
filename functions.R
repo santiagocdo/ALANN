@@ -520,9 +520,9 @@ f_mod0 <- function (par, training, preW = NULL) {
       # update weights Hidden-Output
       for (o in 1:nOut) {
         if (OUTPUT[t,o] == 1) {
-          W[,] <- W[,] + alpha * beta * (INPUT[t,] %*% t(deltaO[trial,o]))
+          W[,o] <- W[,o] + alpha * beta * (INPUT[t,] %*% t(deltaO[trial,o]))
         } else {
-          W[,] <- W[,] + alpha * betaNR * (INPUT[t,] %*% t(deltaO[trial,o]))
+          W[,o] <- W[,o] + alpha * betaNR * (INPUT[t,] %*% t(deltaO[trial,o]))
         }
       }
     } # end trials per block cycle # t
