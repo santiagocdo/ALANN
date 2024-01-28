@@ -105,6 +105,7 @@ f_runSim <- function (par, trPh, subj, print_weights = F, mod_type = "mod1") {
       if (mod_type == "mod0") {
         phs[[ph]] <- f_mod0(par=tempPar,training=trPh[[ph]])
         exp <- data.frame(ph=ph,phs[[ph]]$db)
+        Vs <- data.frame(ph=ph,phs[[ph]]$Vs)
       } else if (mod_type == "mod1") {
         phs[[ph]] <- f_mod1(par=tempPar,training=trPh[[ph]])
         exp <- data.frame(ph=ph,phs[[ph]]$db)
@@ -153,6 +154,9 @@ f_runSim <- function (par, trPh, subj, print_weights = F, mod_type = "mod1") {
         # add correct number of blocks
         phs[[ph]]$db$nBlock <- phs[[ph]]$db$nBlock + max(exp$nBlock)
         exp <- rbind(exp,data.frame(ph=ph,phs[[ph]]$db))
+        # add correct number of blocks 
+        phs[[ph]]$Vs$nBlock <- phs[[ph]]$Vs$nBlock + max(Vs$nBlock)
+        Vs <- rbind(Vs,data.frame(ph=ph,phs[[ph]]$Vs))
       } else if(mod_type == "mod1") {
         phs[[ph]] <- f_mod1(par=tempPar,training=trPh[[ph]],
                             preW.IH=phs[[ph-1]]$wIH,preW.HO=phs[[ph-1]]$wHO)
@@ -252,11 +256,12 @@ f_runSim <- function (par, trPh, subj, print_weights = F, mod_type = "mod1") {
     }
   }
   
-  # if no model 5 was conducted then no chl errors, thus NULL
+  # if no mod4, mod5, or mod6 was conducted then no chl errors, thus NULL
   if (!exists("chl_error")) {chl_error <- NULL}
+  if (!exists("Vs")) {Vs <- NULL}
   
   # create test and chl_error if not required 
-  return(list(exp=exp,test=test,chl_error=chl_error,weights=weights))
+  return(list(exp=exp,test=test,chl_error=chl_error,weights=weights,Vs=Vs))
 }
 
 # # # # # # # # # # Visualization and having weights# # # # # # # # # # # # # #
@@ -264,10 +269,37 @@ f_runSim <- function (par, trPh, subj, print_weights = F, mod_type = "mod1") {
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # visualization (exp data, test data, number of outputs, plot individual participants, plot test data)
-f_plotSims <- function(exp, test, chl_error, par, nSim, doIndPart = F, 
+f_plotSims <- function(exp, test, chl_error, Vs, par, nSim, doIndPart = F, 
                        mod_type, label_output = "") {
   # how many outputs?
   nOut <- length(unique(exp$out))
+  
+  # y-axis for mod0 can be also negative
+  if (mod_type == "mod0") {
+    ylim=c(-1,1)
+    Vs <- reshape2::melt(Vs,measure.vars = colnames(Vs)[grepl("_",colnames(Vs))])
+    Vs$variable <- as.character(Vs$variable)
+    temp <- t(matrix(unlist(strsplit(Vs$variable,"_")),nrow=2))
+    colnames(temp) <- c("input","output")
+    Vs <- cbind(Vs,temp)
+    pMeanMod0 <- ggplot(Vs, aes(x=nBlock, y=value, col=input)) +
+      labs(title = paste0(mod_type,"; N = ",nSim),
+           subtitle = label_output,
+           x = "Blocks (1 block = number of trial types)",
+           y = "Mean Inputs Weights",
+           col = "inputs:") + 
+      geom_vline(xintercept = cumsum(par$nBlock)) +
+      stat_summary(fun.data = mean_se, geom = "errorbar", width = 0, alpha = 0.1) +
+      stat_summary(fun = "mean", geom="line") +
+      coord_cartesian(ylim = ylim) +
+      scale_y_continuous(breaks = c(ylim[1],median(ylim),ylim[2])) +
+      scale_x_continuous(breaks = cumsum(par$nBlock)) +
+      theme_bw() + facet_grid(. ~ output)
+  } else {
+    ylim=c(0,1)
+    pMeanMod0 <- "no individual weights, only works with mod0"
+  }
+  ybreaks=c(ylim[1],median(ylim),ylim[2])
   
   # plot depending on number of output units
   pMean <- ggplot(exp,aes(x=nBlock,y=actO,col=trialType)) + 
@@ -279,8 +311,8 @@ f_plotSims <- function(exp, test, chl_error, par, nSim, doIndPart = F,
     geom_vline(xintercept = cumsum(par$nBlock)) +
     stat_summary(fun.data = mean_se, geom = "errorbar", width = 0, alpha = 0.1) +
     stat_summary(fun = "mean", geom="line") +
-    coord_cartesian(ylim = c(0,1)) +
-    scale_y_continuous(breaks = c(0.0,0.5,1.0)) +
+    coord_cartesian(ylim = ylim) +
+    scale_y_continuous(breaks = ybreaks) +
     scale_x_continuous(breaks = cumsum(par$nBlock)) +
     theme_bw() + facet_grid(. ~ out)
   # if (nOut > 1) {pMean <- pMean + facet_grid(. ~ out)}
@@ -295,8 +327,8 @@ f_plotSims <- function(exp, test, chl_error, par, nSim, doIndPart = F,
            col = "Trial Type:") + 
       geom_vline(xintercept = cumsum(par$nBlock)) +
       geom_line() + 
-      coord_cartesian(ylim = c(0,1)) +
-      scale_y_continuous(breaks = c(0.0,0.5,1.0)) +
+      coord_cartesian(ylim = ylim) +
+      scale_y_continuous(breaks = ybreaks) +
       scale_x_continuous(breaks = cumsum(par$nBlock)) +
       facet_grid(nSubj ~ .) +
       theme_bw() + facet_grid(nSubj ~ out)
@@ -354,7 +386,7 @@ f_plotSims <- function(exp, test, chl_error, par, nSim, doIndPart = F,
   
   # get all the plots in the return list
   return(list(pMean=pMean,pInd=pInd,pTest=pTest,pLR.IH=pLR.IH,pLR.HO=pLR.HO,
-              pChl.error=pChl.error))
+              pChl.error=pChl.error,pMeanMod0=pMeanMod0))
 }
 
 # print csv and png files of the weights for mod1 and mod2
@@ -497,6 +529,10 @@ f_mod0 <- function (par, training, preW = NULL) {
   if (is.null(preW)) {
     W <- matrix(0, nrow=nStim, ncol=nOut)
   } else {W <- preW}
+  # create matrix with all weights
+  Wall <- matrix(NA, ncol=length(as.vector(W)), nrow=nTrial)
+  colnames(Wall) <- paste0(rep(colnames(INPUT),nOut),"_out",
+                           rep(1:nOut,each=nStim))
   
   #### learning algorithm ###
   # see also: https://web.stanford.edu/group/pdplab/pdphandbook/handbookch6.html
@@ -510,6 +546,7 @@ f_mod0 <- function (par, training, preW = NULL) {
       ### ### ### activation ### ### ### 
       trial <- t+((nB-1)*nTrialType)
       
+      # net input as activation (no logistic transformation as backprop)
       actO[trial,] <- INPUT[t,] %*% W[,] # INPUT[t,] assumed to be a 1 x nStim matrix
         
       ### ### ### learning (weight changes) ### ######
@@ -525,6 +562,10 @@ f_mod0 <- function (par, training, preW = NULL) {
           W[,o] <- W[,o] + alpha * betaNR * (INPUT[t,] %*% t(deltaO[trial,o]))
         }
       }
+      
+      # store all weights
+      Wall[trial,] <- as.vector(W)
+      
     } # end trials per block cycle # t
     if (nB == 1) {
       trialTypeLong <- as.character(trialType)
@@ -541,11 +582,14 @@ f_mod0 <- function (par, training, preW = NULL) {
     actOT <- data.frame(trialType=trialTypeTest,actOT)
   } else {actOT <- NULL}
   
-  # outputs' activations data frame
+  # outputs' activations data.frame
   db <- data.frame(nTrial=1:nTrial,nBlock=rep(1:nBlock,each=nTrialType),
                    trialType=trialTypeLong,actO=actO)
+  # weights valeus (associative strength; V) data.frame
+  Vs <- data.frame(nTrial=1:nTrial,nBlock=rep(1:nBlock,each=nTrialType),
+                   trialType=trialTypeLong,Wall)
   
-  output <- list(db=db, actO=actO, W=W, actOT=actOT)
+  output <- list(db=db, actO=actO, W=W, actOT=actOT, Vs=Vs)
   return(output)
 }
 

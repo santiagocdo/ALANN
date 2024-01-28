@@ -50,7 +50,6 @@ trPh <- dataReady$trPh
   #mod3: BP; Xie & Seung (2003) - Neural Computation
   #mod4: Contrast Hebbian Learning (CHL); Xie & Seung (2003) - Neural Computation
   #mod5: CHL with random feedback; Detorakis, et al. (2019) - Neural Networks
-
 mod_type <- "mod0"
 
 # run sanity check function (warnings provided)
@@ -102,10 +101,10 @@ if (mod_type == "mod4" | mod_type == "mod5" | mod_type == "mod6") {
 # weights per subj and layers (figures and csv; TRUE = yes, FALSE = no)
 print_weights <- F
 # how many simulated subjects?
-nSim <- 12
+nSim <- 6
 
 # for loop for subjects
-message(paste("Starting ",nSim," simulations..."))
+message(paste("Starting",nSim,"simulations..."))
 for (s in 1:nSim) {
   # run all phases for one subject 
   temp <- f_runSim(par, trPh, subj = s, print_weights, mod_type)
@@ -117,33 +116,43 @@ for (s in 1:nSim) {
     exp <- data.frame(nSubj=s, temp$exp)
     # only when test is not null
     if (!is.null(temp$test)){test <- data.frame(nSubj=s, temp$test)}
-    # only when chl_error is not null
+    # mod4, mod5,and mo6 only when chl_error is not null
     if (!is.null(temp$chl_error)){chl_error <- data.frame(nSubj=s, temp$chl_error)}
+    # mod0 only 
+    if (!is.null(temp$Vs)){Vs <- data.frame(nSubj=s, temp$Vs)}
   } else { # subject >1
     exp <- rbind(exp,data.frame(nSubj=s, temp$exp))
     # only when test is not null
     if (!is.null(temp$test)){test <- rbind(test,data.frame(nSubj=s, temp$test))}
-    # only when chl_error is not null
+    # mod4, mod5,and mo6 only when chl_error is not null
     if (!is.null(temp$chl_error)){chl_error <- rbind(chl_error,data.frame(nSubj=s, temp$chl_error))}
+    # mod0 only 
+    if (!is.null(temp$Vs)){Vs <- rbind(Vs,data.frame(nSubj=s, temp$Vs))}
   }
 } # end s loop
 
 # visualize simulations conditional to if test was required or not
 if (!exists("test")) {test <- NULL}
 if (!exists("chl_error")) {chl_error <- NULL}
+if (!exists("Vs")) {Vs <- NULL}
 
 # if you want to print individual plots (N < 12) then change doIndPart to T
-plots <- f_plotSims(exp, test, chl_error, par, nSim,
+plots <- f_plotSims(exp, test, chl_error, Vs, par, nSim,
                     doIndPart = F, mod_type, label_output)
 
 # display plots from the list() called "plot"
 # plot means (pMean) average output activation
 plots$pMean
+# plot individuals  weights(pMeanMod0), only for mod0
+plots$pMeanMod0
 # plot individuals (pInd) output activation
 plots$pInd
 # plot tests (pTest) average output activation in test trials
 plots$pTest
-test %>% group_by(trialType) %>% summarize(actOT=mean(actOT))
+# get the test final values only if test is not NULL
+if (!is.null(test)) {
+  test %>% group_by(trialType) %>% summarize(actOT=mean(actOT))
+}
 # plot learning rates from input to hidden (pLR.IH)
 plots$pLR.IH
 # plot learning rates from hidden to output (pLR.HO)
@@ -154,7 +163,7 @@ plots$pChl.error
 
 
 # save a csv from "exp" data frame, containing output activations in long format
-# write.csv(exp,paste0("output/exp_",mod_type,"_n",nSim,".csv"),row.names = F)
+write.csv(exp,paste0("output/exp_",mod_type,"_n",nSim,".csv"),row.names = F)
 
 # # save plots
 # ggsave(paste0("figures/pMean_",mod_type,"_",label_output,"_out",

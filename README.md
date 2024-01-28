@@ -21,6 +21,8 @@ This project is programmed in R. Thus, the user will need to install the latest 
   
   4.1. Decide which model you want to run in line 53. 
     
+    mod0: Rescorla-Wagner (RW); Rescorla & Wagner (1972)
+    
     mod1: Back-Propagation (BP); Delamater (2012) - Learning & Behaviour
     
     mod2: BP dynamic alpha; Delamater & Castiello (2022) - gregynog Associative Learning Symposoum
@@ -31,9 +33,9 @@ This project is programmed in R. Thus, the user will need to install the latest 
     
     mod5: CHL with random feedback; Detorakis, et al. (2019) - Neural Networks
   
-  4.2. Adjust parameters depending on the model (modType) in lines 64 to 93.
+  4.2. Adjust parameters depending on the model (modType) in lines 63 to 98.
   
-## 5. Visualize Figures from lines 139 to 149 ##
+## 5. Visualize Figures from lines 139 to 155 ##
 
 
 
