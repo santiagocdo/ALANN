@@ -264,6 +264,8 @@ f_runSim <- function (par, trPh, subj, print_weights = F, mod_type = "mod1") {
   return(list(exp=exp,test=test,chl_error=chl_error,weights=weights,Vs=Vs))
 }
 
+
+
 # # # # # # # # # # Visualization and having weights# # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -542,20 +544,25 @@ f_mod0 <- function (par, training, preW = NULL) {
     INPUT <- as.matrix(INPUT[randT,])
     OUTPUT <- as.matrix(OUTPUT[randT,])
     trialType <- trialType[randT]
+    
     for (t in 1:nTrialType) {
       ### ### ### activation ### ### ### 
+      # trial number
       trial <- t+((nB-1)*nTrialType)
       
       # net input as activation (no logistic transformation as backprop)
       actO[trial,] <- INPUT[t,] %*% W[,] # INPUT[t,] assumed to be a 1 x nStim matrix
-        
+      
       ### ### ### learning (weight changes) ### ######
       
-      ### delta (error) for output
+      ### vector of prediction error, each element is for one output
       deltaO[trial,] <- OUTPUT[t,] - actO[trial,]
       
-      # update weights Hidden-Output
-      for (o in 1:nOut) {
+      # store all weights
+      Wall[trial,] <- as.vector(W)
+      
+      # update weights input-output
+      for (o in 1:nOut) { 
         if (OUTPUT[t,o] == 1) {
           W[,o] <- W[,o] + alpha * beta * (INPUT[t,] %*% t(deltaO[trial,o]))
         } else {
@@ -563,10 +570,8 @@ f_mod0 <- function (par, training, preW = NULL) {
         }
       }
       
-      # store all weights
-      Wall[trial,] <- as.vector(W)
-      
     } # end trials per block cycle # t
+    
     if (nB == 1) {
       trialTypeLong <- as.character(trialType)
     } else {
