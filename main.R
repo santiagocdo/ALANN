@@ -50,7 +50,8 @@ trPh <- dataReady$trPh
   #mod3: BP; Xie & Seung (2003) - Neural Computation
   #mod4: Contrast Hebbian Learning (CHL); Xie & Seung (2003) - Neural Computation
   #mod5: CHL with random feedback; Detorakis, et al. (2019) - Neural Networks
-mod_type <- "mod0"
+  #mod6: CHL with random feedback and dynamic LR (mod2 and mod5)
+mod_type <- "mod6"
 
 # run sanity check function (warnings provided)
 f_sanityCheck()
@@ -86,7 +87,7 @@ if (mod_type == "mod2") { # beta 0.9, rho = 0.05, mu = 0.01
 }
 
 ## ## ## Mod 4 and 5 ## ## ##
-if (mod_type == "mod4" | mod_type == "mod5" | mod_type == "mod6") {
+if (mod_type == "mod4" | mod_type == "mod5") {
   par$tf <- 15 #        dynamic equation time = 30
   par$dt <- 0.4 #       time step = 0.08
   par$adaptBias <- 0 #  
@@ -96,12 +97,31 @@ if (mod_type == "mod4" | mod_type == "mod5" | mod_type == "mod6") {
                          "_eta",par$eta,"_L",nrow(par$nHidden))
 }
 
+## ## ## Mod 6 ## ## ##
+if (mod_type == "mod6") {
+  # mod5
+  par$tf <- 15 #        dynamic equation time = 30
+  par$dt <- 0.4 #       time step = 0.08
+  par$adaptBias <- 0 #  
+  par$gamma <- 0.2 #    feedback gain factor = 0.05
+  par$eta <- 0.4 #      learning rate = 0.1
+  
+  # mod2
+  # rho and mu free parameters (smooth learning rate change; Kaye & Pearce, 1984)
+  par$rho <- 0.05 # rho (p) is for weights between input to hidden 
+  par$mu <- 0.05 # mu (m) is for weights between hidden to output
+  
+  label_output <- paste0("tf",par$tf,"_dt",par$dt,"_gamma",par$gamma,
+                         "_eta",par$eta,"_rho",par$rho,"_mu",par$mu,
+                         "_L",nrow(par$nHidden))
+}
+
 
 
 # weights per subj and layers (figures and csv; TRUE = yes, FALSE = no)
-print_weights <- F
+print_weights <- T
 # how many simulated subjects?
-nSim <- 12
+nSim <- 16
 
 # for loop for subjects
 message(paste("Starting",nSim,"simulations..."))
@@ -140,38 +160,38 @@ if (!exists("Vs")) {Vs <- NULL}
 plots <- f_plotSims(exp, test, chl_error, Vs, par, nSim,
                     doIndPart = F, mod_type, label_output)
 
-# display plots from the list() called "plot"
-# plot means (pMean) average output activation
-plots$pMean
-# plot individuals  weights(pMeanMod0), only for mod0
-plots$pMeanMod0
-# plot individuals (pInd) output activation
-plots$pInd
-# plot tests (pTest) average output activation in test trials
-plots$pTest
-# get the test final values only if test is not NULL
-if (!is.null(test)) {
-  test %>% group_by(trialType) %>% summarize(actOT=mean(actOT))
-}
-# plot learning rates from input to hidden (pLR.IH)
-plots$pLR.IH
-# plot learning rates from hidden to output (pLR.HO)
-plots$pLR.HO
-# plot ch errors (pChl.error)
-plots$pChl.error
+# # display plots from the list() called "plot"
+# # plot means (pMean) average output activation
+# plots$pMean
+# # plot individuals weights(pMeanMod0), only for mod0
+# plots$pMeanMod0
+# # plot individuals (pInd) output activation
+# plots$pInd
+# # plot tests (pTest) average output activation in test trials
+# plots$pTest
+# # get the test final values only if test is not NULL
+# if (!is.null(test)) {
+#   test %>% group_by(trialType) %>% summarize(actOT=mean(actOT))
+# }
+# # plot learning rates from input to hidden (pLR.IH)
+# plots$pLR.IH
+# # plot learning rates from hidden to output (pLR.HO)
+# plots$pLR.HO
+# # plot ch errors (pChl.error)
+# plots$pChl.error
 
 
 
 # save a csv from "exp" data frame, containing output activations in long format
-write.csv(exp,paste0("output/exp_",mod_type,"_n",nSim,".csv"),row.names = F)
+write.csv(exp,paste0("output/exp_total_",mod_type,"_n",nSim,".csv"),row.names = F)
 
 # # save plots
-# ggsave(paste0("figures/pMean_",mod_type,"_",label_output,"_out",
-#               length(unique(exp$out)),".png"), dpi = 300, limitsize = TRUE,
-#        plot = plots$pMean, 
-#        units = "px", # "cm", "in"
-#        width = 1200,
-#        height = 800)
+ggsave(paste0("figures/pMean_",mod_type,"_",label_output,"_out",
+              length(unique(exp$out)),".png"), dpi = 300, limitsize = TRUE,
+       plot = plots$pMean,
+       units = "px", # "cm", "in"
+       width = 1200,
+       height = 800)
 # # save plots
 # ggsave(paste0("figures/pInd_",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
 #        plot = plots$pInd, 
@@ -179,20 +199,20 @@ write.csv(exp,paste0("output/exp_",mod_type,"_n",nSim,".csv"),row.names = F)
 #        width = 1200, 
 #        height = 800)
 # # save plots
-# ggsave(paste0("figures/pLR.IH_",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
-#        plot = plots$pLR.IH, 
-#        units = "px",
-#        width = 1200, 
-#        height = 800)
+ggsave(paste0("figures/pLR.IH_",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
+       plot = plots$pLR.IH,
+       units = "px",
+       width = 1200,
+       height = 800)
 # # save plots
-# ggsave(paste0("figures/pLR.HO",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
-#        plot = plots$pLR.HO, 
-#        units = "px",
-#        width = 1200, 
-#        height = 800)
+ggsave(paste0("figures/pLR.HO",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
+       plot = plots$pLR.HO,
+       units = "px",
+       width = 1200,
+       height = 800)
 # # save plots
 # ggsave(paste0("figures/pChl.error_",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
-#        plot = plots$pChl.error, 
+#        plot = plots$pChl.error,
 #        units = "px",
-#        width = 1200, 
+#        width = 1200,
 #        height = 800)

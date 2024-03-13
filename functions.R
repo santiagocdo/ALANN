@@ -28,9 +28,9 @@
   # f_mod1: Backpropagation function for one phase, received initial weights. Delamater (2012) - L&B
   # f_mod2: Backpropagation dynamic LR, received initial weights as f_mod1
   # f_mod3: Backpropagation. Xie & Seung (2003) - Neural Computation
-  # f_mod4: contrast hebbian leraning (CHL) based on Detorakis, et al. (2019) - Neural Networks
+  # f_mod4: Contrast Hebbian Learning (CHL) based on Detorakis, et al. (2019) - Neural Networks
   # f_mod5: CHL with random feedback from Detorakis, et al. (2019) - Neural Networks
-  # f_mod6: same as model 5 but with dynamic learning rate
+  # f_mod6: same as model 4 but with dynamic learning rate
 
 # install or load required libraries
 f_loadLibraries <- function () {
@@ -129,7 +129,9 @@ f_runSim <- function (par, trPh, subj, print_weights = F, mod_type = "mod1") {
         }
       } else if (mod_type == "mod6") {
         phs[[ph]] <- f_mod6(par=tempPar,training=trPh[[ph]])
-        exp <- data.frame(ph=ph,phs[[ph]]$db)
+        colnames(phs[[ph]]$lrIH) <- paste0(substr(colnames(phs[[ph]]$lrIH),4,
+                                                  nchar(colnames(phs[[ph]]$lrIH))),"_lrIH")
+        exp <- data.frame(ph=ph,phs[[ph]]$db,phs[[ph]]$lrIH,lrHO=phs[[ph]]$lrHO)
         if (nrow(par$nHidden) == 1) {
           chl_error <- data.frame(ph=ph,phs[[ph]]$chl_error)          
         }
@@ -203,9 +205,11 @@ f_runSim <- function (par, trPh, subj, print_weights = F, mod_type = "mod1") {
                             preW=list(W=phs[[ph-1]]$W,
                                       G=phs[[ph-1]]$G,
                                       C=phs[[ph-1]]$C))
+        colnames(phs[[ph]]$lrIH) <- paste0(substr(colnames(phs[[ph]]$lrIH),4,
+                                                  nchar(colnames(phs[[ph]]$lrIH))),"_lrIH")
         # add correct number of blocks
         phs[[ph]]$db$nBlock <- phs[[ph]]$db$nBlock + max(exp$nBlock)
-        exp <- rbind(exp,data.frame(ph=ph,phs[[ph]]$db))
+        exp <- rbind(exp,data.frame(ph=ph,phs[[ph]]$db,phs[[ph]]$lrIH,lrHO=phs[[ph]]$lrHO))
         if (nrow(par$nHidden) == 1) {
           chl_error <- rbind(chl_error,data.frame(ph=ph,phs[[ph]]$chl_error))        
         }
@@ -224,6 +228,8 @@ f_runSim <- function (par, trPh, subj, print_weights = F, mod_type = "mod1") {
     # store weights
     if (mod_type == "mod1" | mod_type == "mod2") {
       weights[[ph]] <- list(wIH=phs[[ph]]$wIH,wHO=phs[[ph]]$wHO)
+    } else if (mod_type == "mod6") {
+      weights[[ph]] <- list(wIH=phs[[ph]]$W[[1]],wHO=phs[[ph]]$W[[2]])
     } else {
       weights[[ph]] <- phs[[ph]]$W
     }
@@ -231,9 +237,12 @@ f_runSim <- function (par, trPh, subj, print_weights = F, mod_type = "mod1") {
     # print weights
     if (print_weights) {
       if (mod_type != "mod0") {
-        if (nrow(par$nHidden)==1) { # if 3 layers (input, hidden, output)
+        # if (nrow(par$nHidden)==1) { # if 3 layers (input, hidden, output)
+        if (mod_type == "mod1" | mod_type == "mod2" | 
+            mod_type == "mod6") { # if 3 layers (input, hidden, output)
           f_printWeights2Layers(weights,ph,trPh,tempPar,subj)
-        } else { # L > 2
+        } else if (mod_type == "mod3" | mod_type == "mod4" | 
+                   mod_type == "mod5") { # L > 2
           f_printWeightsNLayers(weights,ph,trPh,tempPar,subj)
         }
       } # end if mod_type
@@ -365,7 +374,7 @@ f_plotSims <- function(exp, test, chl_error, Vs, par, nSim, doIndPart = F,
   } else {pChl.error <- "no model 4 nor 5 used"} 
   
   # plot learning rates
-  if (mod_type == "mod2") {
+  if (mod_type == "mod2" | mod_type == "mod6") {
     if (nOut > 1) {temp <- exp[exp$out == unique(exp$out)[1],]; temp$out <- NULL} else {temp <- exp}
     # # # # figure for model type "mod2" (lrIH and lrHO) # # # #
     templr <- melt(temp,measure.vars = colnames(temp)[grepl("_lrIH",colnames(temp))])
@@ -1128,7 +1137,7 @@ f_mod4 <- function (par, training, preW = NULL) {
           }
           xUp[[k]] <- xUp[[k]] + dt * (-xUp[[k]] + temp)
           # accumulate activation for visualization purposes
-          xUp2[[k]] <- cbind(xUp2[[k]],xUp[[k]])
+          # xUp2[[k]] <- cbind(xUp2[[k]],xUp[[k]])
         }
       }
       # ggplot(melt(t(xUp2[[1]])),aes(x=Var1,y=value,col=as.factor(Var2))) + geom_line()
@@ -1147,7 +1156,7 @@ f_mod4 <- function (par, training, preW = NULL) {
           }
           xDo[[k]] <- xDo[[k]] + dt * (-xDo[[k]] + temp)
           # accumulate activation for visualization purposes
-          xDo2[[k]] <- cbind(xDo2[[k]],xDo[[k]])
+          # xDo2[[k]] <- cbind(xDo2[[k]],xDo[[k]])
         }
       }
       # ggplot(melt(t(xDo2[[1]])),aes(x=Var1,y=value,col=as.factor(Var2))) + geom_line()
@@ -1325,7 +1334,7 @@ f_mod5 <- function (par, training, preW = NULL) {
           }
           xUp[[k]] <- xUp[[k]] + dt * (-xUp[[k]] + temp)
           # accumulate activation for visualization purposes
-          xUp2[[k]] <- cbind(xUp2[[k]], xUp[[k]])
+          # xUp2[[k]] <- cbind(xUp2[[k]], xUp[[k]])
         }
       }
       # ggplot(melt(t(xUp2[[1]])),aes(x=Var1,y=value,col=as.factor(Var2))) + geom_line()
@@ -1344,7 +1353,7 @@ f_mod5 <- function (par, training, preW = NULL) {
           }
           xDo[[k]] <- xDo[[k]] + dt * (-xDo[[k]] + temp)
           # accumulate activation for visualization purposes
-          xDo2[[k]] <- cbind(xDo2[[k]],xDo[[k]])
+          # xDo2[[k]] <- cbind(xDo2[[k]],xDo[[k]])
         }
       }
       # ggplot(melt(t(xDo2[[1]])),aes(x=Var1,y=value,col=as.factor(Var2))) + geom_line()
@@ -1437,8 +1446,9 @@ f_mod5 <- function (par, training, preW = NULL) {
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# CHL with random feedback (Detorakis, et al., 2019) and adaptive learning rate
-f_mod6 <- function (par, training, preW = NULL) {
+# CHL with random feedback (Detorakis, et al., 2019) and adaptive lLR  (mod2 and mod5)
+f_mod6 <- function (par, training, preW = NULL,
+                    preLR = NULL, preLrHO = NULL) {
   ### extract parameters ###
   tf <- par$tf
   dt <- par$dt
@@ -1453,6 +1463,9 @@ f_mod6 <- function (par, training, preW = NULL) {
   TEST <- as.matrix(training$TEST)
   trialType <- training$trialType
   trialTypeTest <- training$trialTypeTest
+  # dynamic learning rate
+  rho <- par$rho
+  mu <- par$mu
   
   ### create relevant matrices and scalars ###
   nOut <- ncol(OUTPUT) # number of outcomes
@@ -1498,6 +1511,14 @@ f_mod6 <- function (par, training, preW = NULL) {
     }
   } else {W <- preW$W; G <- preW$G; C <- preW$C}
   
+  
+  ### creation of matrices and add initial values ###
+  outDis <- matrix(NA, nrow = nTrial) # volatile learning rate
+  lrIH <- matrix(NA, nrow = nTrial, ncol = nStim) # volatile learning rate I to H
+  colnames(lrIH) <- colnames(INPUT)
+  lrHO <- matrix(NA, nrow = nTrial) # volatile learning rate
+  
+  
   ### list with activation (xUp and xDown) and biases (bias) per layer k ###
   # note: inputs does not have a space in act 
   xUp <- xDo <- bias <- dW <- list()
@@ -1522,6 +1543,9 @@ f_mod6 <- function (par, training, preW = NULL) {
       xUp[[L]] <- as.vector(OUTPUT[j,])
       xUp0 <- as.vector(INPUT[j,])
       
+      # which trial
+      trial <- j+((nB-1)*nTrialType)
+      
       ## ## Contrastive Hebbian Learning ## ##
       # 1. dynamic equations # # # # # # # # # # # # # # # # # # # #
       # # # # Clamped Phase  # # # # # # # # # # # # # # # # # # # #
@@ -1536,7 +1560,7 @@ f_mod6 <- function (par, training, preW = NULL) {
           }
           xUp[[k]] <- xUp[[k]] + dt * (-xUp[[k]] + temp)
           # accumulate activation for visualization purposes
-          xUp2[[k]] <- cbind(xUp2[[k]], xUp[[k]])
+          # xUp2[[k]] <- cbind(xUp2[[k]], xUp[[k]])
         }
       }
       # ggplot(melt(t(xUp2[[1]])),aes(x=Var1,y=value,col=as.factor(Var2))) + geom_line()
@@ -1555,21 +1579,42 @@ f_mod6 <- function (par, training, preW = NULL) {
           }
           xDo[[k]] <- xDo[[k]] + dt * (-xDo[[k]] + temp)
           # accumulate activation for visualization purposes
-          xDo2[[k]] <- cbind(xDo2[[k]],xDo[[k]])
+          # xDo2[[k]] <- cbind(xDo2[[k]],xDo[[k]])
         }
       }
       # ggplot(melt(t(xDo2[[1]])),aes(x=Var1,y=value,col=as.factor(Var2))) + geom_line()
       # ggplot(melt(t(xDo2[[2]])),aes(x=Var1,y=value,col=as.factor(Var2))) + geom_line()
       
+      ### alpha ###
+      outDis[trial] <- mean(abs(OUTPUT[j,] - xDo[[L]]))
+      if (trial == 1) {
+        # Learning Rates (LR)
+        if (is.null(preLR)) { # phase 1
+          lrIH[trial,] <- rho * outDis[trial] * INPUT[j,]
+          lrHO[trial] <- mu*(1-outDis[trial])
+        } else { # phase > 1
+          temp <- rho*outDis[trial]*INPUT[j,] + (1-rho)*preLR[nrow(preLR),]*INPUT[j,]
+          # carrying over previous learning rates of absent stimuli
+          lrIH[trial,] <- temp + preLR[nrow(preLR),]*(1-INPUT[j,])
+          lrHO[trial] <- mu*(1-outDis[trial])+(1-mu)*preLrHO[length(preLrHO)]
+        }
+      } else { # trial > 1
+        # Learning Rates (LR)
+        temp <- rho*outDis[trial]*INPUT[j,] + (1-rho)*lrIH[trial-1,]*INPUT[j,]
+        # carrying over previous learning rates of absent stimuli
+        lrIH[trial,] <- temp + lrIH[trial-1,]*(1-INPUT[j,])
+        lrHO[trial] <- mu*(1-outDis[trial])+(1-mu)*lrHO[trial-1]
+      }
+      
       # 4. Hebbian update # # # # # # # # # # # # # # # # # # # #
       for (k in 1:L) {
         if (k == 1) {
-          # dW <- eta*gamma^(k-L) * t(xUp[[k]]%*%t(xUp0) - xDo[[k]]%*%t(xDo0))
-          dW <- eta*gamma * t(xUp[[k]]%*%t(xUp0) - xDo[[k]]%*%t(xDo0))
+          dW <- lrIH[trial,]*gamma^(k-L) * t(xUp[[k]]%*%t(xUp0) - xDo[[k]]%*%t(xDo0))
+          # dW <- eta * gamma * t(xUp[[k]]%*%t(xUp0) - xDo[[k]]%*%t(xDo0))
         } else {
           error <- t(xUp[[k]]%*%t(xUp[[k-1]]) - xDo[[k]]%*%t(xDo[[k-1]]))
-          # dW <- eta*gamma^(k-L) * error
-          dW <- eta*gamma * error
+          dW <- lrHO[trial,]*gamma^(k-L) * error
+          # dW <- eta*gamma * error
         }
         W[[k]] <- W[[k]] + dW * C[[k]]
       }
@@ -1631,7 +1676,8 @@ f_mod6 <- function (par, training, preW = NULL) {
   
   # rename output-hidden errors columns
   colnames(chl_error)[-(1:4)] <- paste0(rep("out.",nOut),1:nOut)
-  output <- list(db=db, actO=actO, W=W, G=G, C=C, chl_error=chl_error,actOT=actOT)
+  output <- list(db=db, actO=actO, W=W, G=G, C=C, chl_error=chl_error,
+                 lrIH=lrIH, lrHO=lrHO, actOT=actOT)
   return(output)
 }
 

@@ -32,6 +32,8 @@ This project is programmed in R. Thus, the user will need to install the latest 
     mod4: Contrast Hebbian Learning (CHL); Xie & Seung (2003) - Neural Computation
     
     mod5: CHL with random feedback; Detorakis, et al. (2019) - Neural Networks
+    
+    mod6: CHL with random feedback and dynamic LR (mod2 and mod5)
   
   4.2. Adjust parameters depending on the model (modType) in lines 63 to 98.
   
