@@ -1610,11 +1610,11 @@ f_mod6 <- function (par, training, preW = NULL,
       for (k in 1:L) {
         if (k == 1) {
           dW <- lrIH[trial,]*gamma^(k-L) * t(xUp[[k]]%*%t(xUp0) - xDo[[k]]%*%t(xDo0))
-          # dW <- eta * gamma * t(xUp[[k]]%*%t(xUp0) - xDo[[k]]%*%t(xDo0))
+          # dW <- eta * gamma^(k-L) * t(xUp[[k]]%*%t(xUp0) - xDo[[k]]%*%t(xDo0))
         } else {
           error <- t(xUp[[k]]%*%t(xUp[[k-1]]) - xDo[[k]]%*%t(xDo[[k-1]]))
           dW <- lrHO[trial,]*gamma^(k-L) * error
-          # dW <- eta*gamma * error
+          # dW <- eta*gamma^(k-L) * error
         }
         W[[k]] <- W[[k]] + dW * C[[k]]
       }

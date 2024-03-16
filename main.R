@@ -104,13 +104,11 @@ if (mod_type == "mod6") {
   par$dt <- 0.4 #       time step = 0.08
   par$adaptBias <- 0 #  
   par$gamma <- 0.2 #    feedback gain factor = 0.05
-  par$eta <- 0.4 #      learning rate = 0.1
   
   # mod2
   # rho and mu free parameters (smooth learning rate change; Kaye & Pearce, 1984)
   par$rho <- 0.05 # rho (p) is for weights between input to hidden 
-  par$mu <- 0.05 # mu (m) is for weights between hidden to output
-  
+  par$mu <- 0.001 # mu (m) is for weights between hidden to output
   label_output <- paste0("tf",par$tf,"_dt",par$dt,"_gamma",par$gamma,
                          "_eta",par$eta,"_rho",par$rho,"_mu",par$mu,
                          "_L",nrow(par$nHidden))
