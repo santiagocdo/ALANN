@@ -15,7 +15,7 @@
 #   2. f_prepData()
 #   3. f_sanityCheck()
 #   4. f_runSim()
-#     4.1. f_mod1(), f_mod2(), f_mod3(), f_mod4(), and f_mod5()
+#     4.1. f_mod1(), f_mod2(), f_mod3(), f_mod4(), f_mod5(), and f_mod6()
 #       4.1.1. f_derAct(), and f_sigAct()
 #     4.2 f_printWeights2Layers(), or f_printWeightsNLayers()
 #   5. f_plotSims()
@@ -94,7 +94,7 @@ if (mod_type == "mod4" | mod_type == "mod5") {
   par$gamma <- 0.2 #    feedback gain factor = 0.05
   par$eta <- 0.4 #      learning rate = 0.1
   label_output <- paste0("tf",par$tf,"_dt",par$dt,"_gamma",par$gamma,
-                         "_eta",par$eta,"_L",nrow(par$nHidden))
+                         "_eta",par$eta,"_L",nrow(par$nHidden)+1)
 }
 
 ## ## ## Mod 6 ## ## ##
@@ -105,13 +105,13 @@ if (mod_type == "mod6") {
   par$adaptBias <- 0 #  
   par$gamma <- 0.2 #    feedback gain factor = 0.05
   
-  # mod2
+  # mod6
   # rho and mu free parameters (smooth learning rate change; Kaye & Pearce, 1984)
-  par$rho <- 0.05 # rho (p) is for weights between input to hidden 
-  par$mu <- 0.001 # mu (m) is for weights between hidden to output
+  par$rho <- 0.01 # rho (p) is for weights between input to hidden 
+  par$mu <- 0.01 # mu (m) is for weights between hidden to output
   label_output <- paste0("tf",par$tf,"_dt",par$dt,"_gamma",par$gamma,
                          "_eta",par$eta,"_rho",par$rho,"_mu",par$mu,
-                         "_L",nrow(par$nHidden))
+                         "_L",nrow(par$nHidden)+1)
 }
 
 

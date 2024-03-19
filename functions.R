@@ -204,7 +204,8 @@ f_runSim <- function (par, trPh, subj, print_weights = F, mod_type = "mod1") {
         phs[[ph]] <- f_mod6(par=tempPar,training=trPh[[ph]],
                             preW=list(W=phs[[ph-1]]$W,
                                       G=phs[[ph-1]]$G,
-                                      C=phs[[ph-1]]$C))
+                                      C=phs[[ph-1]]$C),
+                            preLR=phs[[ph-1]]$lrIH,preLrHO=phs[[ph-1]]$lrHO)
         colnames(phs[[ph]]$lrIH) <- paste0(substr(colnames(phs[[ph]]$lrIH),4,
                                                   nchar(colnames(phs[[ph]]$lrIH))),"_lrIH")
         # add correct number of blocks
@@ -1539,8 +1540,11 @@ f_mod6 <- function (par, training, preW = NULL,
     
     ### run trials within a block ###
     for (j in 1:nTrialType) {
+      # xDown (free phase) at layer 0 is the same as input
       xDo0 <- as.vector(INPUT[j,])
+      # xUp (clamped phase) at layer L is the same as output
       xUp[[L]] <- as.vector(OUTPUT[j,])
+      # xUp (clamped phase) at layer 0 is the same as input
       xUp0 <- as.vector(INPUT[j,])
       
       # which trial
@@ -1548,10 +1552,13 @@ f_mod6 <- function (par, training, preW = NULL,
       
       ## ## Contrastive Hebbian Learning ## ##
       # 1. dynamic equations # # # # # # # # # # # # # # # # # # # #
-      # # # # Clamped Phase  # # # # # # # # # # # # # # # # # # # #
+      
       # create xUp2 for visualization purposes
-      xUp2 <- xUp # Up is clamped phase
+      # xUp2 <- xUp # Up is clamped phase
+      # create xD02 for visualization purposes
+      # xDo2 <- xDo # Do(wn) is free phase
       for (ts in 1:tf) {
+        # 2. Clamped Phase # # # # # # # # # # # # # # # # # # # # #
         for (k in (L-1):1) {
           if (k == 1) { # k-1 should be xUp 0
             temp <- f_sigAct( t(W[[k]])%*%xUp0 + gamma*G[[k+1]]%*%xUp[[k+1]] + bias[[k]] )
@@ -1562,13 +1569,7 @@ f_mod6 <- function (par, training, preW = NULL,
           # accumulate activation for visualization purposes
           # xUp2[[k]] <- cbind(xUp2[[k]], xUp[[k]])
         }
-      }
-      # ggplot(melt(t(xUp2[[1]])),aes(x=Var1,y=value,col=as.factor(Var2))) + geom_line()
-      
-      # # # # Free Phase # # # # # # # # # # # # # # # # # # # #
-      # create xD02 for visualization purposes
-      xDo2 <- xDo # Do(wn) is free phase
-      for (ts in 1:tf) {
+        # 3. Free Phase# # # # # # # # # # # # # # # # # # # # # # #
         for (k in 1:L) {
           if (k == 1) { # k-1 should be xDown 0
             temp <- f_sigAct( t(W[[k]])%*%xDo0 + gamma*G[[k+1]]%*%xDo[[k+1]] + bias[[k]])
@@ -1582,7 +1583,12 @@ f_mod6 <- function (par, training, preW = NULL,
           # xDo2[[k]] <- cbind(xDo2[[k]],xDo[[k]])
         }
       }
-      # ggplot(melt(t(xDo2[[1]])),aes(x=Var1,y=value,col=as.factor(Var2))) + geom_line()
+      # ggplot(melt(t(xUp2[[1]])),aes(x=Var1,y=value,col=as.factor(Var2))) + geom_line() +
+      #   labs(subtitle = "Trial = 3; dt = 0.08; time-steps = 30; gamma = 0.02",
+      #        y = "Activations", x = "Time Steps", col = "Hidden Units") + theme_classic()
+      # ggplot(melt(t(xDo2[[1]])),aes(x=Var1,y=value,col=as.factor(Var2))) + geom_line() +
+      #   labs(subtitle = "Trial = 1; dt = 0.08; time-steps = 30; gamma = 0.02",
+      #        y = "Activations", x = "Time Steps", col = "Hidden Units") + theme_classic()
       # ggplot(melt(t(xDo2[[2]])),aes(x=Var1,y=value,col=as.factor(Var2))) + geom_line()
       
       ### alpha ###

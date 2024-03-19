@@ -2,9 +2,9 @@
 rm(list=ls(all=TRUE))
 
 # read output data
-par <- read.csv("figures/mod6_200t_n16_partial_rho0.05_mu0.05/exp_partial_mod6_n16.csv")
+par <- read.csv("figures/mod6_600t_n16_rho0.01_mu0.01_gamma0.2_partial/exp_partial_mod6_n16.csv")
 par$task <- "partial"
-tot <- read.csv("figures/mod6_200t_n16_total_rho0.05_mu0.05/exp_total_mod6_n16.csv")
+tot <- read.csv("figures/mod6_600t_n16_rho0.01_mu0.01_gamma0.2_total/exp_total_mod6_n16.csv")
 tot$task <- "total"
 
 # ggplot(tot, aes(x=nBlock,y=actO,col=trialType)) +
@@ -75,8 +75,9 @@ db <- rbind(par,tot)
 
 # visualize
 if (!require(ggplot2)) {install.packages("ggplot2")}; library(ggplot2)
-plot<-ggplot(db[db$condition=="reversal",], aes(x=nBlock,y=discScore,col=task)) +
-  labs(title = "rho = 0.05; mu = 0.01",
+db$condition <- factor(db$condition, levels = c("reversal","non-reversal"))
+plot<-ggplot(db[,], aes(x=nBlock,y=discScore,col=task,linetype=condition)) +
+  labs(title = "rho = 0.01; mu = 0.01; gamma = 0.2",
     y=expression(act[target]*`/(`*act[target]+act[other]*`)`)) +
   coord_cartesian(ylim = c(0,1)) +
   geom_hline(yintercept = 0.5, col="black", alpha=0.5) +
@@ -84,7 +85,7 @@ plot<-ggplot(db[db$condition=="reversal",], aes(x=nBlock,y=discScore,col=task)) 
   stat_summary(fun = "mean", geom="line") +
   theme_classic()
 plot
-ggsave(paste0("figures/CRL_200t_rho0.05_mu0.05.png"), dpi = 300, limitsize = TRUE,
+ggsave(paste0("figures/CRL_600t_rho0.01_mu0.01_gamma0.2.png"), dpi = 300, limitsize = TRUE,
        plot = plot,
        units = "px",
        width = 1200,
