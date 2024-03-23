@@ -51,9 +51,9 @@ trPh <- dataReady$trPh
   #mod4: Contrast Hebbian Learning (CHL); Xie & Seung (2003) - Neural Computation
   #mod5: CHL with random feedback; Detorakis, et al. (2019) - Neural Networks
   #mod6: CHL with random feedback and dynamic LR (mod2 and mod5)
-mod_type <- "mod6"
+mod_type <- "mod2"
 
-# run sanity check function (warnings provided)
+# run sanity check function (warnings provided)... some...
 f_sanityCheck()
 
 
@@ -70,7 +70,8 @@ if (mod_type == "mod0") { # Rescorla & Wagner (1972)
 
 ## ## ## Mod 1 and 3 ## ## ##
 if (mod_type == "mod1" | mod_type == "mod3") { # alpha 0.2, beta 0.9
-  # alpha (learning rate) and beta (momentum; (Delamater, 2012 - L&B; Xie & Seung, 2003 - Neural Computation)
+  # alpha (learning rate) and beta (momentum; Delamater, 2012 - L&B; 
+  # Xie & Seung, 2003 - Neural Computation)
   par$alpha <- 0.2
   par$beta <- 0.9
   par$adaptBias <- 0
@@ -81,7 +82,7 @@ if (mod_type == "mod1" | mod_type == "mod3") { # alpha 0.2, beta 0.9
 if (mod_type == "mod2") { # beta 0.9, rho = 0.05, mu = 0.01
   par$beta <- 0.9
   # rho and mu free parameters (smooth learning rate change; Kaye & Pearce, 1984)
-  par$rho <- 0.05 # rho (p) is for weights between input to hidden 
+  par$rho <- 0.01 # rho (p) is for weights between input to hidden 
   par$mu <- 0.01 # mu (m) is for weights between hidden to output
   label_output <- paste0("beta",par$beta,"_rho",par$rho,"_mu",par$mu)
 }
@@ -117,9 +118,9 @@ if (mod_type == "mod6") {
 
 
 # weights per subj and layers (figures and csv; TRUE = yes, FALSE = no)
-print_weights <- T
+print_weights <- F
 # how many simulated subjects?
-nSim <- 16
+nSim <- 32
 
 # for loop for subjects
 message(paste("Starting",nSim,"simulations..."))
@@ -155,9 +156,9 @@ if (!exists("chl_error")) {chl_error <- NULL}
 if (!exists("Vs")) {Vs <- NULL}
 
 # if you want to print individual plots (N < 12) then change doIndPart to T
-plots <- f_plotSims(exp, test, chl_error, Vs, par, nSim,
-                    doIndPart = F, mod_type, label_output)
-
+# plots <- f_plotSims(exp, test, chl_error, Vs, par, nSim,
+#                     doIndPart = F, mod_type, label_output)
+# 
 # # display plots from the list() called "plot"
 # # plot means (pMean) average output activation
 # plots$pMean
@@ -181,33 +182,33 @@ plots <- f_plotSims(exp, test, chl_error, Vs, par, nSim,
 
 
 # save a csv from "exp" data frame, containing output activations in long format
-write.csv(exp,paste0("output/exp_total_",mod_type,"_n",nSim,".csv"),row.names = F)
+write.csv(exp,paste0("output/exp_partial_",mod_type,"_n",nSim,"_",label_output,".csv"),row.names = F)
 
-# # save plots
-ggsave(paste0("figures/pMean_",mod_type,"_",label_output,"_out",
-              length(unique(exp$out)),".png"), dpi = 300, limitsize = TRUE,
-       plot = plots$pMean,
-       units = "px", # "cm", "in"
-       width = 1200,
-       height = 800)
-# # save plots
-# ggsave(paste0("figures/pInd_",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
-#        plot = plots$pInd, 
-#        units = "px",
-#        width = 1200, 
+# # # save plots
+# ggsave(paste0("figures/pMean_",mod_type,"_",label_output,"_out",
+#               length(unique(exp$out)),".png"), dpi = 300, limitsize = TRUE,
+#        plot = plots$pMean,
+#        units = "px", # "cm", "in"
+#        width = 1200,
 #        height = 800)
-# # save plots
-ggsave(paste0("figures/pLR.IH_",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
-       plot = plots$pLR.IH,
-       units = "px",
-       width = 1200,
-       height = 800)
-# # save plots
-ggsave(paste0("figures/pLR.HO",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
-       plot = plots$pLR.HO,
-       units = "px",
-       width = 1200,
-       height = 800)
+# # # save plots
+# # ggsave(paste0("figures/pInd_",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
+# #        plot = plots$pInd, 
+# #        units = "px",
+# #        width = 1200, 
+# #        height = 800)
+# # # save plots
+# ggsave(paste0("figures/pLR.IH_",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
+#        plot = plots$pLR.IH,
+#        units = "px",
+#        width = 1200,
+#        height = 800)
+# # # save plots
+# ggsave(paste0("figures/pLR.HO",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
+#        plot = plots$pLR.HO,
+#        units = "px",
+#        width = 1200,
+#        height = 800)
 # # save plots
 # ggsave(paste0("figures/pChl.error_",mod_type,"_",label_output,".png"), dpi = 300, limitsize = TRUE,
 #        plot = plots$pChl.error,

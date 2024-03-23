@@ -1443,7 +1443,7 @@ f_mod5 <- function (par, training, preW = NULL) {
   return(output)
 }
 
-# # # # # # # # # # Detorakis with adaptive (Pearce) learning rate # # # # # # # # # # #
+# # # # # # # # # # Detorakis with adaptive (Pearce) learning rate# # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -1690,4 +1690,93 @@ f_mod6 <- function (par, training, preW = NULL,
 
 
 
+
+# # # # # # # # # # For Gregynog 2024 # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+f_combine_sims <- function(par,tot) {
+  # ggplot(tot, aes(x=nBlock,y=actO,col=trialType)) +
+  #   stat_summary(geom = "line") +
+  #   facet_grid(.~out) +
+  #   theme_classic()
+  # ggplot(par, aes(x=nBlock,y=actO,col=trialType)) +
+  #   stat_summary(geom = "line") +
+  #   facet_grid(.~out) +
+  #   theme_classic()
+  
+  # prepare phase 2 partial reversal only reversed stimuli
+  # par <- par[par$ph == 2,]
+  actO.1 <- par[par$out == "actO.1",]
+  actO.1$actO.1 <- actO.1$actO; actO.1$out <- NULL
+  actO.2 <- par[par$out == "actO.2",]
+  par <- data.frame(actO.1,actO.2=actO.2$actO)
+  
+  par$discScore[par$ph==1] <- ifelse(par$trialType[par$ph==1] == "A" | par$trialType[par$ph==1] == "B" |
+                                       par$trialType[par$ph==1] == "C" | par$trialType[par$ph==1] == "D",
+                                     par$actO.1[par$ph==1]/(par$actO.1[par$ph==1]+par$actO.2[par$ph==1]),
+                                     par$actO.2[par$ph==1]/(par$actO.1[par$ph==1]+par$actO.2[par$ph==1]))
+  par$discScore[par$ph==2] <- ifelse(par$trialType[par$ph==2] == "A" | par$trialType[par$ph==2] == "B" |
+                                       par$trialType[par$ph==2] == "G" | par$trialType[par$ph==2] == "H",
+                                     par$actO.1[par$ph==2]/(par$actO.1[par$ph==2]+par$actO.2[par$ph==2]),
+                                     par$actO.2[par$ph==2]/(par$actO.1[par$ph==2]+par$actO.2[par$ph==2]))
+  par$condition <- ifelse(par$trialType == "C" | par$trialType == "D" |
+                            par$trialType == "G" | par$trialType == "H",
+                          "reversed","nonreversed")
+  # ggplot(par, aes(x=nBlock,y=actO.1/(actO.2+actO.1),col=trialType)) +
+  #   stat_summary(fun.data = mean_se, geom = "errorbar", width = 0, alpha = 0.1) +
+  #   stat_summary(fun = "mean", geom="line")
+  # par$condition[par$ph==1] <- ifelse(par$trialType[par$ph==1] == "C" | par$trialType[par$ph==1] == "D" |
+  #                                      par$trialType[par$ph==1] == "G" | par$trialType[par$ph==1] == "H",
+  #                                    "reversal","non-reversal")
+  # par$condition[par$ph==2] <- ifelse(par$trialType[par$ph==2] == "C" | par$trialType[par$ph==2] == "D" |
+  #                                      par$trialType[par$ph==2] == "G" | par$trialType[par$ph==2] == "H",
+  #                                    "reversal","non-reversal")
+  
+  # relevant <- t(matrix(c("C","actO.2",
+  #                        "D","actO.2",
+  #                        "G","actO.1",
+  #                        "H","actO.1"),ncol=4)); par$relevant <- F
+  # for (i in 1:nrow(relevant)) {
+  #   par$relevant[par$trialType == relevant[i,1] & par$out == relevant[i,2]] <- T
+  # }
+  # par <- par[par$relevant == T,]; par$relevant <- NULL
+  
+  
+  
+  # prepare phase 2 total reversal
+  # tot <- tot[tot$ph == 2,]
+  actO.1 <- tot[tot$out == "actO.1",]
+  actO.1$actO.1 <- actO.1$actO; actO.1$out <- NULL
+  actO.2 <- tot[tot$out == "actO.2",]
+  tot <- data.frame(actO.1,actO.2=actO.2$actO)
+  
+  tot$discScore[tot$ph==1] <- ifelse(tot$trialType[tot$ph==1] == "E" | tot$trialType[tot$ph==1] == "F" |
+                                       tot$trialType[tot$ph==1] == "G" | tot$trialType[tot$ph==1] == "H",
+                                     tot$actO.2[tot$ph==1]/(tot$actO.1[tot$ph==1]+tot$actO.2[tot$ph==1]),
+                                     tot$actO.1[tot$ph==1]/(tot$actO.1[tot$ph==1]+tot$actO.2[tot$ph==1]))
+  tot$discScore[tot$ph==2] <- ifelse(tot$trialType[tot$ph==2] == "E" | tot$trialType[tot$ph==2] == "F" |
+                                       tot$trialType[tot$ph==2] == "G" | tot$trialType[tot$ph==2] == "H",
+                                     tot$actO.1[tot$ph==2]/(tot$actO.1[tot$ph==2]+tot$actO.2[tot$ph==2]),
+                                     tot$actO.2[tot$ph==2]/(tot$actO.1[tot$ph==2]+tot$actO.2[tot$ph==2]))
+  tot$condition <- "reversed"
+  
+  # relevant <- t(matrix(c("A","actO.2",
+  #                        "B","actO.2",
+  #                        "C","actO.2",
+  #                        "D","actO.2",
+  #                        "E","actO.1",
+  #                        "F","actO.1",
+  #                        "G","actO.1",
+  #                        "H","actO.1"),ncol=8)); tot$relevant <- F
+  # for (i in 1:nrow(relevant)) {
+  #   tot$relevant[tot$trialType == relevant[i,1] & tot$out == relevant[i,2]] <- T
+  # }
+  # tot <- tot[tot$relevant == T,]; tot$relevant <- NULL
+  
+  
+  
+  # combine both databases
+  db <- rbind(par,tot)
+  return(db)
+}
 
