@@ -5,10 +5,13 @@ rm(list=ls(all=TRUE))
 
 # read output data
 # par <- read.csv("figures/mod6_600t_n16_rho0.01_mu0.01_gamma0.2_partial/exp_partial_mod6_n16.csv")
-par <- read.csv("output/exp_partial_mod6_n16_tf15_dt0.4_gamma0.2_eta_rho0.01_mu0.01_L2.csv")
+# par <- read.csv("output/exp_partial_mod6_n16_tf15_dt0.4_gamma0.2_eta_rho0.01_mu0.01_L2.csv")
+# par <- read.csv("output/exp_partial_mod1_n16_alpha0.2_beta0.9.csv")
+par <- read.csv("output/exp_partial_mod2_n16_beta0.9_rho0.05_mu5e-04.csv")
 par$task <- "partial"
 # tot <- read.csv("figures/mod6_600t_n16_rho0.01_mu0.01_gamma0.2_total/exp_total_mod6_n16.csv")
-tot <- read.csv("output/exp_total_mod6_n16_tf15_dt0.4_gamma0.2_eta_rho0.01_mu0.01_L2.csv")
+# tot <- read.csv("output/exp_total_mod1_n16_alpha0.2_beta0.9.csv")
+tot <- read.csv("output/exp_total_mod2_n16_beta0.9_rho0.05_mu5e-04.csv")
 tot$task <- "total"
 
 
@@ -24,14 +27,16 @@ db$condition2 <- paste0(db$task,"-",db$condition)
 db$condition2 <- factor(db$condition2, levels = c("total-reversed","partial-reversed","partial-nonreversed"))
 plot2 <- ggplot(db[,], aes(x=nBlock,y=discScore,
                            col=condition2,linetype=condition2)) +
-  labs(title = expression(rho==0.01*`;`~mu==0.01),
+  labs(title = expression(rho==0.05*`;`~mu==0.0005),
+       #title = expression(alpha==0.2*`;`~beta==0.9),
        x="blocks",col="Task and Condition",
        linetype="Task and Condition",#y=expression(act[target]*`/(`*act[target]+act[other]*`)`)
        y="correct score") +
   coord_cartesian(ylim = c(0,1)) +
   geom_hline(yintercept = 0.5, col="black", alpha=0.5) +
-  geom_vline(xintercept = 500.5, col="black", alpha=0.5) +
-  scale_x_continuous(breaks = seq(0,1000,by=250)) +
+  geom_vline(xintercept = 75.5, col="black", alpha=0.5) +
+  # scale_x_continuous(breaks = seq(0,1000,by=250)) +
+  scale_x_continuous(breaks = c(75,120)) +
   scale_y_continuous(breaks = seq(0,1,by=0.5)) +
   scale_color_manual(values = c("blue","orange","orange")) +
   scale_linetype_manual(values = c("solid","solid","dotted")) +
@@ -47,10 +52,12 @@ plot2 <- ggplot(db[,], aes(x=nBlock,y=discScore,
 
 # read output data
 # par <- read.csv("figures/mod6_600t_n16_rho0.01_mu0.0001_gamma0.2_partial/exp_partial_mod6_n16.csv")
-par <- read.csv("output/exp_partial_mod6_n16_tf15_dt0.4_gamma0.2_eta_rho0.01_mu1e-04_L2.csv")
+# par <- read.csv("output/exp_partial_mod6_n16_tf15_dt0.4_gamma0.2_eta_rho0.01_mu1e-04_L2.csv")
+par <- read.csv("output/exp_partial_mod2_n16_beta0.9_rho0.05_mu0.05.csv")
 par$task <- "partial"
 # tot <- read.csv("figures/mod6_600t_n16_rho0.01_mu0.0001_gamma0.2_total/exp_total_mod6_n16.csv")
-tot <- read.csv("output/exp_total_mod6_n16_tf15_dt0.4_gamma0.2_eta_rho0.01_mu1e-04_L2.csv")
+# tot <- read.csv("output/exp_total_mod6_n16_tf15_dt0.4_gamma0.2_eta_rho0.01_mu1e-04_L2.csv")
+tot <- read.csv("output/exp_total_mod2_n16_beta0.9_rho0.05_mu0.05.csv")
 tot$task <- "total"
 
 
@@ -65,14 +72,15 @@ db$condition2 <- paste0(db$task,"-",db$condition)
 db$condition2 <- factor(db$condition2, levels = c("total-reversed","partial-reversed","partial-nonreversed"))
 plot1 <- ggplot(db[,], aes(x=nBlock,y=discScore,
                            col=condition2,linetype=condition2)) +
-  labs(title = expression(rho==0.01*`;`~mu==0.0001),
+  labs(title = expression(rho==0.05*`;`~mu==0.05),
        x="blocks",col="Task and Condition",
        linetype="Task and Condition",#y=expression(act[target]*`/(`*act[target]+act[other]*`)`)
        y="correct score") +
   coord_cartesian(ylim = c(0,1)) +
   geom_hline(yintercept = 0.5, col="black", alpha=0.5) +
-  geom_vline(xintercept = 500.5, col="black", alpha=0.5) +
-  scale_x_continuous(breaks = seq(0,1000,by=250)) +
+  geom_vline(xintercept = 75.5, col="black", alpha=0.5) +
+  # scale_x_continuous(breaks = seq(0,1000,by=250)) +
+  scale_x_continuous(breaks = c(75,120)) +
   scale_y_continuous(breaks = seq(0,1,by=0.5)) +
   scale_color_manual(values = c("blue","orange","orange")) +
   scale_linetype_manual(values = c("solid","solid","dotted")) +
@@ -85,7 +93,7 @@ plot1 <- ggplot(db[,], aes(x=nBlock,y=discScore,
 
 
 library(ggpubr)
-plot <- ggarrange(plot2,plot1,ncol=2,common.legend = T,labels = c("A","B"))
+plot <- ggarrange(plot2, plot1, ncol=2, common.legend = T, labels = c("A","B"))
 
 
 

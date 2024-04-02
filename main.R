@@ -82,8 +82,9 @@ if (mod_type == "mod1" | mod_type == "mod3") { # alpha 0.2, beta 0.9
 if (mod_type == "mod2") { # beta 0.9, rho = 0.05, mu = 0.01
   par$beta <- 0.9
   # rho and mu free parameters (smooth learning rate change; Kaye & Pearce, 1984)
-  par$rho <- 0.01 # rho (p) is for weights between input to hidden 
-  par$mu <- 0.01 # mu (m) is for weights between hidden to output
+  par$rho <- 0.05 # rho (p) is for weights between input to hidden 
+  par$mu <- 0.05 # mu (m) is for weights between hidden to output
+  par$kappa <- 1
   label_output <- paste0("beta",par$beta,"_rho",par$rho,"_mu",par$mu)
 }
 
@@ -118,9 +119,9 @@ if (mod_type == "mod6") {
 
 
 # weights per subj and layers (figures and csv; TRUE = yes, FALSE = no)
-print_weights <- F
+print_weights <- T
 # how many simulated subjects?
-nSim <- 32
+nSim <- 16
 
 # for loop for subjects
 message(paste("Starting",nSim,"simulations..."))
@@ -156,28 +157,28 @@ if (!exists("chl_error")) {chl_error <- NULL}
 if (!exists("Vs")) {Vs <- NULL}
 
 # if you want to print individual plots (N < 12) then change doIndPart to T
-# plots <- f_plotSims(exp, test, chl_error, Vs, par, nSim,
-#                     doIndPart = F, mod_type, label_output)
-# 
-# # display plots from the list() called "plot"
-# # plot means (pMean) average output activation
-# plots$pMean
-# # plot individuals weights(pMeanMod0), only for mod0
-# plots$pMeanMod0
-# # plot individuals (pInd) output activation
-# plots$pInd
-# # plot tests (pTest) average output activation in test trials
-# plots$pTest
-# # get the test final values only if test is not NULL
-# if (!is.null(test)) {
-#   test %>% group_by(trialType) %>% summarize(actOT=mean(actOT))
-# }
-# # plot learning rates from input to hidden (pLR.IH)
-# plots$pLR.IH
-# # plot learning rates from hidden to output (pLR.HO)
-# plots$pLR.HO
-# # plot ch errors (pChl.error)
-# plots$pChl.error
+plots <- f_plotSims(exp, test, chl_error, Vs, par, nSim,
+                    doIndPart = F, mod_type, label_output)
+
+# display plots from the list() called "plot"
+# plot means (pMean) average output activation
+plots$pMean
+# plot individuals weights(pMeanMod0), only for mod0
+plots$pMeanMod0
+# plot individuals (pInd) output activation
+plots$pInd
+# plot tests (pTest) average output activation in test trials
+plots$pTest
+# get the test final values only if test is not NULL
+if (!is.null(test)) {
+  test %>% group_by(trialType) %>% summarize(actOT = mean(actOT))
+}
+# plot learning rates from input to hidden (pLR.IH)
+plots$pLR.IH
+# plot learning rates from hidden to output (pLR.HO)
+plots$pLR.HO
+# plot ch errors (pChl.error)
+plots$pChl.error
 
 
 

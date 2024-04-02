@@ -739,6 +739,7 @@ f_mod2 <- function (par,training, nKO_MM = 0,
   beta <- par$beta
   rho <- par$rho
   mu <- par$mu
+  kappa <- par$kappa
   nHid <- par$nHidden$nHV + par$nHidden$nHMM + par$nHidden$nHA
   nBlock <- par$nBlock
   INPUT <- as.matrix(training$INPUT)
@@ -833,12 +834,12 @@ f_mod2 <- function (par,training, nKO_MM = 0,
       }
       
       # weight change Hidden-Output
-      dwHO[,] <- t(lrHO[trial]*(as.matrix(deltaO[trial,]) %*% actH[trial,])) + beta*dwHO[,]
+      dwHO[,] <- t(kappa*lrHO[trial]*(as.matrix(deltaO[trial,]) %*% actH[trial,])) + beta*dwHO[,]
       # update weights Hidden-Output
       wHO[,] <- wHO[,] + dwHO[,]
       
       # weight change Input-Hidden
-      dwIH[,] <- (lrIH[trial,]*t(as.matrix(deltaH[trial,]) %*% INPUT[t,])) + beta*dwIH[,]
+      dwIH[,] <- (kappa*lrIH[trial,]*t(as.matrix(deltaH[trial,]) %*% INPUT[t,])) + beta*dwIH[,]
       # update weights Input-Hidden
       wIH[,] <- wIH[,] + (dwIH[,] * conIH)
     } # end trials per block cycle # t

@@ -1,6 +1,6 @@
 phase,matType,trialType,in.ctx,in.V1,in.V2,in.V3,in.V4,in.V5,in.V6,in.V7,in.V8,out.1,out.2,par.nBlock,par.nH.nHV,par.nH.nHMM,par.nH.nHA,par.nI.ctx,par.nI.vis,par.nI.aud
-1,INPUT,A,0,1,0,0,0,0,0,0,0,,,200,0,4,0,1,8,0
-1,INPUT,B,0,0,1,0,0,0,0,0,0,,,200,,,,,,
+1,INPUT,A,0,1,0,0,0,0,0,0,0,,,75,0,4,0,1,8,0
+1,INPUT,B,0,0,1,0,0,0,0,0,0,,,45,,,,,,
 1,INPUT,C,0,0,0,1,0,0,0,0,0,,,,,,,,,
 1,INPUT,D,0,0,0,0,1,0,0,0,0,,,,,,,,,
 1,INPUT,E,0,0,0,0,0,1,0,0,0,,,,,,,,,
