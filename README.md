@@ -1,5 +1,5 @@
 # Associative Learning with Artificial Neural Network (ALANN)
-14/01/2023
+03/04/2024
 
 
 
