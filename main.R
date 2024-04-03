@@ -51,7 +51,7 @@ trPh <- dataReady$trPh
   #mod4: Contrast Hebbian Learning (CHL); Xie & Seung (2003) - Neural Computation
   #mod5: CHL with random feedback; Detorakis, et al. (2019) - Neural Networks
   #mod6: CHL with random feedback and dynamic LR (mod2 and mod5)
-mod_type <- "mod2"
+mod_type <- "mod1"
 
 # run sanity check function (warnings provided)... some...
 f_sanityCheck()
@@ -83,7 +83,7 @@ if (mod_type == "mod2") { # beta 0.9, rho = 0.05, mu = 0.01
   par$beta <- 0.9
   # rho and mu free parameters (smooth learning rate change; Kaye & Pearce, 1984)
   par$rho <- 0.05 # rho (p) is for weights between input to hidden 
-  par$mu <- 0.05 # mu (m) is for weights between hidden to output
+  par$mu <- 0.0005 # mu (m) is for weights between hidden to output
   par$kappa <- 1
   label_output <- paste0("beta",par$beta,"_rho",par$rho,"_mu",par$mu)
 }
@@ -183,7 +183,7 @@ plots$pChl.error
 
 
 # save a csv from "exp" data frame, containing output activations in long format
-write.csv(exp,paste0("output/exp_partial_",mod_type,"_n",nSim,"_",label_output,".csv"),row.names = F)
+write.csv(exp,paste0("output/exp_total_",mod_type,"_n",nSim,"_",label_output,".csv"),row.names = F)
 
 # # # save plots
 # ggsave(paste0("figures/pMean_",mod_type,"_",label_output,"_out",
