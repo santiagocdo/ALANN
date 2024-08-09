@@ -156,34 +156,35 @@ if (!exists("test")) {test <- NULL}
 if (!exists("chl_error")) {chl_error <- NULL}
 if (!exists("Vs")) {Vs <- NULL}
 
-# if you want to print individual plots (N < 12) then change doIndPart to T
-plots <- f_plotSims(exp, test, chl_error, Vs, par, nSim,
-                    doIndPart = F, mod_type, label_output)
-
-# display plots from the list() called "plot"
-# plot means (pMean) average output activation
-plots$pMean
-# plot individuals weights(pMeanMod0), only for mod0
-plots$pMeanMod0
-# plot individuals (pInd) output activation
-plots$pInd
-# plot tests (pTest) average output activation in test trials
-plots$pTest
-# get the test final values only if test is not NULL
-if (!is.null(test)) {
-  test %>% group_by(trialType) %>% summarize(actOT = mean(actOT))
-}
-# plot learning rates from input to hidden (pLR.IH)
-plots$pLR.IH
-# plot learning rates from hidden to output (pLR.HO)
-plots$pLR.HO
-# plot ch errors (pChl.error)
-plots$pChl.error
+# # if you want to print individual plots (N < 12) then change doIndPart to T
+# plots <- f_plotSims(exp, test, chl_error, Vs, par, nSim,
+#                     doIndPart = F, mod_type, label_output)
+# 
+# # display plots from the list() called "plot"
+# # plot means (pMean) average output activation
+# plots$pMean
+# # plot individuals weights(pMeanMod0), only for mod0
+# plots$pMeanMod0
+# # plot individuals (pInd) output activation
+# plots$pInd
+# # plot tests (pTest) average output activation in test trials
+# plots$pTest
+# # get the test final values only if test is not NULL
+# if (!is.null(test)) {
+#   test %>% group_by(trialType) %>% summarize(actOT = mean(actOT))
+# }
+# # plot learning rates from input to hidden (pLR.IH)
+# plots$pLR.IH
+# # plot learning rates from hidden to output (pLR.HO)
+# plots$pLR.HO
+# # plot ch errors (pChl.error)
+# plots$pChl.error
 
 
 
 # save a csv from "exp" data frame, containing output activations in long format
-write.csv(exp,paste0("output/exp_total_",mod_type,"_n",nSim,"_",label_output,".csv"),row.names = F)
+write.csv(exp, paste0("output/exp_RB_width_delta0.2_",mod_type,"_n",nSim,"_",label_output,".csv"),row.names = F)
+# write.csv(exp, paste0("output/exp_total_",mod_type,"_n",nSim,"_",label_output,".csv"),row.names = F)
 
 # # # save plots
 # ggsave(paste0("figures/pMean_",mod_type,"_",label_output,"_out",
