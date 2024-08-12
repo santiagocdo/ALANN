@@ -614,7 +614,8 @@ f_mod0 <- function (par, training, preW = NULL) {
 
 # Backpropagation (Neural Net Model); run one phase
 f_mod1 <- function (par, training, nKO_MM = 0,
-                    preW.IH = NULL, preW.HO = NULL) {
+                    preW.IH = NULL, preW.HO = NULL, 
+                    rand_trials_block = 1) {
   ### extract parameters ###
   alpha <- par$alpha
   beta <- par$beta
@@ -665,10 +666,12 @@ f_mod1 <- function (par, training, nKO_MM = 0,
   # see also: https://web.stanford.edu/group/pdplab/pdphandbook/handbookch6.html
   for (nB in 1:nBlock) {
     # randomized trial types within a block
-    randT <- sample(1:nTrialType)
-    INPUT <- as.matrix(INPUT[randT,])
-    OUTPUT <- as.matrix(OUTPUT[randT,])
-    trialType <- trialType[randT]
+    if (rand_trials_block == 1) {
+      randT <- sample(1:nTrialType)
+      INPUT <- as.matrix(INPUT[randT,])
+      OUTPUT <- as.matrix(OUTPUT[randT,])
+      trialType <- trialType[randT]
+    } 
     for (t in 1:nTrialType) {
       ### ### ### activation ### ### ### 
       # forward activation # chain rule: act_fun(act_fun(trialBlock %*% wIH) %*% wHO)

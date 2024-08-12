@@ -119,7 +119,7 @@ if (mod_type == "mod6") {
 
 
 # weights per subj and layers (figures and csv; TRUE = yes, FALSE = no)
-print_weights <- T
+print_weights <- F
 # how many simulated subjects?
 nSim <- 16
 
@@ -183,7 +183,7 @@ if (!exists("Vs")) {Vs <- NULL}
 
 
 # save a csv from "exp" data frame, containing output activations in long format
-write.csv(exp, paste0("output/exp_RB_width_delta0.2_",mod_type,"_n",nSim,"_",label_output,".csv"),row.names = F)
+write.csv(exp, paste0("output/exp_II_delta0.2_",mod_type,"_n",nSim,"_",label_output,".csv"),row.names = F)
 # write.csv(exp, paste0("output/exp_total_",mod_type,"_n",nSim,"_",label_output,".csv"),row.names = F)
 
 # # # save plots
