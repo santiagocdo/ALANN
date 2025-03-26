@@ -372,7 +372,7 @@ INPUT$matType <- "INPUT"
 INPUT$out.2 <- INPUT$out.1 <- NA
 
 # perceptual field precision
-delta <- 0.2
+delta <- 0.1
 
 for (t in 1:nrow(trials)) {
   # stim for one trial
@@ -387,7 +387,7 @@ for (t in 1:nrow(trials)) {
   INPUT[t,grepl("in.",colnames(OUTPUT))] <- K
   
   # perceptual fields
-  # image(matrix(K,20))
+  image(matrix(K,20))
   # library(reshape2)
   # for_plot <- melt(matrix(K,20))
   # pB <- ggplot(for_plot, aes(x = Var2,y = Var1,fill = value)) +

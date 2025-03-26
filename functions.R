@@ -303,7 +303,7 @@ f_plotSims <- function(exp, test, chl_error, Vs, par, nSim, doIndPart = F,
       geom_vline(xintercept = cumsum(par$nBlock)) +
       stat_summary(fun.data = mean_se, geom = "errorbar", width = 0, alpha = 0.1) +
       stat_summary(fun = "mean", geom="line") +
-      coord_cartesian(ylim = ylim) +
+      coord_cartesian(ylim = range(c(range(Vs$value),ylim))) +
       scale_y_continuous(breaks = c(ylim[1],median(ylim),ylim[2])) +
       scale_x_continuous(breaks = cumsum(par$nBlock)) +
       theme_bw() + facet_grid(. ~ output)

@@ -119,7 +119,7 @@ if (mod_type == "mod6") {
 
 
 # weights per subj and layers (figures and csv; TRUE = yes, FALSE = no)
-print_weights <- F
+print_weights <- T
 # how many simulated subjects?
 nSim <- 16
 
@@ -157,9 +157,9 @@ if (!exists("chl_error")) {chl_error <- NULL}
 if (!exists("Vs")) {Vs <- NULL}
 
 # # if you want to print individual plots (N < 12) then change doIndPart to T
-# plots <- f_plotSims(exp, test, chl_error, Vs, par, nSim,
-#                     doIndPart = F, mod_type, label_output)
-# 
+plots <- f_plotSims(exp, test, chl_error, Vs, par, nSim,
+                    doIndPart = F, mod_type, label_output)
+
 # # display plots from the list() called "plot"
 # # plot means (pMean) average output activation
 # plots$pMean

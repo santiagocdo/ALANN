@@ -1,0 +1,14 @@
+phase,matType,trialType,in.ctx,in.A1,in.B1,in.C1,in.D1,out.1,par.nBlock,par.nH.nHV,par.nH.nHMM,par.nH.nHA,par.nI.ctx,par.nI.vis,par.nI.aud
+1,INPUT,AB+,0,0.75,0.25,0,0,,200,2,4,2,1,4,0
+1,INPUT,CD+,0,0,0,1,1,,,,,,,,
+1,INPUT,D-,0,0,0,0,1,,,,,,,,
+1,INPUT,ctx-,0,0,0,0,0,,,,,,,,
+1,OUTPUT,AB+,,,,,,1,,,,,,,
+1,OUTPUT,CD+,,,,,,1,,,,,,,
+1,OUTPUT,D-,,,,,,0,,,,,,,
+1,OUTPUT,ctx-,,,,,,0,,,,,,,
+1,TEST,A,0,1,0,0,0,,,,,,,,
+1,TEST,B,0,0,1,0,0,,,,,,,,
+1,TEST,C,0,0,0,1,0,,,,,,,,
+1,TEST,D,0,0,0,0,1,,,,,,,,
+1,TEST,ctx,1,0,0,0,0,,,,,,,,
